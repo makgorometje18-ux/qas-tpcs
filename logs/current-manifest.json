@@ -1,0 +1,146 @@
+[
+  {
+    "barcode": 201515,
+    "Branch_Code": 2126,
+    "branch": "PE Motherwell 31",
+    "parcels": 1
+  },
+  {
+    "barcode": 201516,
+    "Branch_Code": 2126,
+    "branch": "PE Motherwell 31",
+    "parcels": 1
+  },
+  {
+    "barcode": 201519,
+    "Branch_Code": 2232,
+    "branch": "Hermanus",
+    "parcels": 1
+  },
+  {
+    "barcode": 201529,
+    "Branch_Code": 2460,
+    "branch": "PE Booysens Park Shopping Centre",
+    "parcels": 1
+  },
+  {
+    "barcode": 201545,
+    "Branch_Code": 4343,
+    "branch": "Athlone Vangate Mall 52",
+    "parcels": 1
+  },
+  {
+    "barcode": 201550,
+    "Branch_Code": 4422,
+    "branch": "Mini-Stellenbosch Die Boord",
+    "parcels": 1
+  },
+  {
+    "barcode": 201511,
+    "Branch_Code": 2070,
+    "branch": "Welkom Bok",
+    "parcels": 1
+  },
+  {
+    "barcode": 201512,
+    "Branch_Code": 2104,
+    "branch": "Lydenburg Voortrekker",
+    "parcels": 1
+  },
+  {
+    "barcode": 201514,
+    "Branch_Code": 2111,
+    "branch": "Vereeniging Voortrekker",
+    "parcels": 1
+  },
+  {
+    "barcode": 201518,
+    "Branch_Code": 2178,
+    "branch": "Tsakane Mall 91",
+    "parcels": 1
+  },
+  {
+    "barcode": 201522,
+    "Branch_Code": 2299,
+    "branch": "Johannesburg Station West",
+    "parcels": 1
+  },
+  {
+    "barcode": 201525,
+    "Branch_Code": 2351,
+    "branch": "Stutterheim",
+    "parcels": 1
+  },
+  {
+    "barcode": 201527,
+    "Branch_Code": 2418,
+    "branch": "Mamelodi Square",
+    "parcels": 1
+  },
+  {
+    "barcode": 201530,
+    "Branch_Code": 4003,
+    "branch": "Menlyn Mall",
+    "parcels": 1
+  },
+  {
+    "barcode": 201531,
+    "Branch_Code": 4006,
+    "branch": "Johannesburg The Glen",
+    "parcels": 1
+  },
+  {
+    "barcode": 201533,
+    "Branch_Code": 4093,
+    "branch": "East London Southernwood",
+    "parcels": 1
+  },
+  {
+    "barcode": 201534,
+    "Branch_Code": 4147,
+    "branch": "Wadeville",
+    "parcels": 1
+  },
+  {
+    "barcode": 201543,
+    "Branch_Code": 4332,
+    "branch": "Centurion Olievenhoutbosch",
+    "parcels": 1
+  },
+  {
+    "barcode": 201544,
+    "Branch_Code": 4341,
+    "branch": "Witbank Ben Fleur Centre",
+    "parcels": 1
+  },
+  {
+    "barcode": 201546,
+    "Branch_Code": 4354,
+    "branch": "Mall of Africa",
+    "parcels": 1
+  },
+  {
+    "barcode": 201547,
+    "Branch_Code": 4383,
+    "branch": "Umzimkulu Mall",
+    "parcels": 1
+  },
+  {
+    "barcode": 201549,
+    "Branch_Code": 4391,
+    "branch": "Lenasia Signet Terrace",
+    "parcels": 1
+  },
+  {
+    "barcode": 201551,
+    "Branch_Code": 4430,
+    "branch": "Pretoria Middestad Mall",
+    "parcels": 1
+  },
+  {
+    "barcode": 201552,
+    "Branch_Code": 4481,
+    "branch": "Witbank Kwa-Guqa 13",
+    "parcels": 1
+  }
+]

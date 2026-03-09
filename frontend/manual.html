@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QAS-TPCS Manual Entry</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+/* ===== COLORS ===== */
+:root{
+  --bg:#0f172a;
+  --text:white;
+  --card:rgba(255,255,255,0.15);
+  --table:rgba(255,255,255,0.12);
+  --accent:#007bff;
+}
+
+.light{
+  --bg:#f4f6f9;
+  --text:#111;
+  --card:rgba(255,255,255,0.7);
+  --table:white;
+  --accent:#007bff;
+}
+
+body{
+  font-family:Arial;
+  margin:0;
+  padding:20px;
+  background:var(--bg);
+  color:var(--text);
+  transition:0.3s;
+}
+
+/* ===== HEADER ===== */
+h1{
+  text-align:center;
+}
+
+/* ===== TOGGLE ===== */
+.toggle{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:var(--accent);
+  color:white;
+  padding:8px 12px;
+  border-radius:20px;
+  cursor:pointer;
+}
+
+/* ===== BACK BUTTON ===== */
+.back{
+  position:fixed;
+  top:15px;
+  left:15px;
+  background:#555;
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  text-decoration:none;
+}
+
+/* ===== CARD ===== */
+.card{
+  max-width:900px;
+  margin:auto;
+  padding:25px;
+  border-radius:15px;
+  backdrop-filter:blur(12px);
+  background:var(--card);
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);
+}
+
+/* ===== TABLE ===== */
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:var(--table);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+th{
+  background:var(--accent);
+  color:white;
+  padding:12px;
+}
+
+td{
+  padding:10px;
+  text-align:center;
+  border:1px solid rgba(0,0,0,0.3);
+}
+
+tr:nth-child(even){
+  background:rgba(255,255,255,0.05);
+}
+
+/* ===== INPUTS ===== */
+input{
+  padding:8px;
+  width:95%;
+  border-radius:6px;
+  border:none;
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  padding:10px 18px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:var(--accent);
+  color:white;
+  margin:5px;
+}
+
+.btn:hover{
+  opacity:0.9;
+}
+
+.remove{
+  background:#dc3545;
+}
+
+.add{
+  background:#28a745;
+}
+
+.generate{
+  background:#007bff;
+  font-size:16px;
+}
+
+</style>
+</head>
+
+<body>
+
+<a href="/dashboard" class="back">⬅ Dashboard</a>
+
+<div class="toggle" onclick="toggleMode()">🌗 Toggle</div>
+
+<h1>📦 QAS-TPCS Manual Sticker Entry</h1>
+
+<div class="card">
+
+<form method="POST" action="/manual">
+
+<table id="stickersTable">
+<thead>
+<tr>
+<th>Order No</th>
+<th>Order Date</th>
+<th>Branch Code</th>
+<th>Branch Name</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+<tr>
+<td><input name="Order_No[]" required></td>
+<td><input type="date" name="Order_Creation_Date[]" required></td>
+<td><input name="Branch_Code[]" required></td>
+<td><input name="Branch_Name[]" required></td>
+<td>
+<button type="button" class="btn remove" onclick="removeRow(this)">❌</button>
+</td>
+</tr>
+</tbody>
+</table>
+
+<br>
+
+<center>
+<button type="button" class="btn add" onclick="addRow()">➕ Add Row</button>
+<br><br>
+<button type="submit" class="btn generate">Generate Stickers</button>
+</center>
+
+</form>
+
+</div>
+
+<script>
+
+/* DARK MODE */
+function toggleMode(){
+  document.body.classList.toggle("light");
+}
+
+/* ADD ROW */
+function addRow(){
+  const table = document
+    .getElementById("stickersTable")
+    .getElementsByTagName("tbody")[0];
+
+  const newRow = table.rows[0].cloneNode(true);
+  newRow.querySelectorAll("input").forEach(i => i.value="");
+  table.appendChild(newRow);
+}
+
+/* REMOVE ROW */
+function removeRow(btn){
+  const row = btn.closest("tr");
+  const table = row.parentNode;
+
+  if(table.rows.length > 1){
+    row.remove();
+  }
+}
+
+</script>
+
+</body>
+</html>

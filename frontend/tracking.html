@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Track Parcel</title>
+
+<style>
+:root{
+  --bg:#0f172a;
+  --card:#1f2937;
+  --accent:#22c55e;
+  --text:white;
+}
+
+.light{
+  --bg:#f4f6f9;
+  --card:white;
+  --text:#111;
+}
+
+body{
+  font-family:Arial;
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  text-align:center;
+}
+
+/* TOP BUTTONS */
+.back{
+  position:fixed;
+  left:15px;
+  top:15px;
+  background:#555;
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  text-decoration:none;
+}
+
+.toggle{
+  position:fixed;
+  right:15px;
+  top:15px;
+  background:#007bff;
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  cursor:pointer;
+}
+
+h1{margin-top:60px;}
+
+input{
+  padding:14px;
+  width:260px;
+  border-radius:12px;
+  border:none;
+}
+
+button{
+  padding:14px 20px;
+  border:none;
+  border-radius:12px;
+  background:#22c55e;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+/* TIMELINE */
+.timeline{
+  max-width:500px;
+  margin:30px auto;
+  text-align:left;
+}
+
+.step{
+  background:var(--card);
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+  border-left:6px solid #374151;
+}
+
+.done{
+  border-left:6px solid var(--accent);
+}
+
+.status{
+  font-weight:bold;
+  font-size:18px;
+}
+
+.loc{opacity:.9}
+.date{opacity:.7;font-size:14px}
+
+/* Delivered badge */
+.delivered{
+  background:#22c55e;
+  padding:10px;
+  border-radius:10px;
+  text-align:center;
+  font-weight:bold;
+  margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<a href="/dashboard" class="back">⬅ Dashboard</a>
+<div class="toggle" onclick="toggle()">🌗 Toggle</div>
+
+<h1>📦 Track Parcel</h1>
+
+<input id="code" placeholder="Enter tracking number">
+<button onclick="track()">Track</button>
+
+<div id="result" class="timeline"></div>
+
+<script>
+
+function toggle(){
+  document.body.classList.toggle("light");
+}
+
+async function track(){
+  const code=document.getElementById("code").value.trim();
+  if(!code) return;
+
+  const res=await fetch("/track/"+code);
+  const data=await res.json();
+
+  const box=document.getElementById("result");
+  box.innerHTML="";
+
+  if(data.length===0){
+    box.innerHTML="<h3>No tracking found</h3>";
+    return;
+  }
+
+  let delivered=true;
+
+  data.forEach(step=>{
+    if(!step.completed) delivered=false;
+
+    box.innerHTML+=`
+      <div class="step ${step.completed?'done':''}">
+        <div class="status">${step.status}</div>
+        <div class="loc">📍 ${step.location}</div>
+        <div class="date">🕒 ${step.date}</div>
+      </div>
+    `;
+  });
+
+  if(delivered){
+    box.innerHTML+=`
+      <div class="delivered">
+        ✅ Parcel Delivered
+      </div>
+    `;
+  }
+}
+
+</script>
+
+</body>
+</html>

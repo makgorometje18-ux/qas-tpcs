@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>POD History</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+
+/* ===== COLOR MODES ===== */
+:root{
+  --bg:#0f172a;
+  --text:white;
+  --card:rgba(255,255,255,0.15);
+  --table:rgba(255,255,255,0.12);
+  --accent:#3b82f6;
+}
+
+.light{
+  --bg:#f4f6f9;
+  --text:#111;
+  --card:rgba(255,255,255,0.7);
+  --table:white;
+  --accent:#007bff;
+}
+
+/* ===== BODY ===== */
+body{
+  font-family:Arial;
+  margin:0;
+  padding:25px;
+  background:var(--bg);
+  color:var(--text);
+  transition:0.3s;
+}
+
+/* ===== HEADER ===== */
+h2{
+  text-align:center;
+  margin-bottom:25px;
+}
+
+/* ===== TOGGLE (FIXED LIKE DASHBOARD) ===== */
+.toggle{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:var(--accent);
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  cursor:pointer;
+  font-size:14px;
+  z-index:1000;
+}
+
+/* ===== BACK / LOGOUT BUTTON (FIXED LIKE DASHBOARD) ===== */
+.back{
+  position:fixed;
+  top:15px;
+  left:15px;
+  background:#555;
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  text-decoration:none;
+  z-index:1000;
+}
+
+/* ===== CARD ===== */
+.card{
+  background:var(--card);
+  padding:25px;
+  border-radius:15px;
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);
+
+  width:100%;
+  max-width:none;
+  margin:0;
+}
+
+/* ===== INPUTS ===== */
+input{
+  padding:10px;
+  border-radius:8px;
+  border:none;
+  margin:5px;
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  padding:10px 16px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+  background:var(--accent);
+  color:white;
+  margin:5px;
+}
+
+.btn.danger{
+  background:#dc3545;
+}
+
+/* ===== TABLE ===== */
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:var(--table);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+th{
+  background:var(--accent);
+  color:white;
+  padding:12px;
+}
+
+td{
+  padding:12px;
+  text-align:center;
+  border:1px solid rgba(0,0,0,0.3);
+}
+
+tr:nth-child(even){
+  background:rgba(255,255,255,0.05);
+}
+
+tr:hover{
+  background:rgba(0,123,255,0.18);
+}
+
+/* ===== SIGNATURE IMAGE SUPPORT ===== */
+td img{
+  max-height:60px;
+  max-width:150px;
+  object-fit:contain;
+  background:white;
+  border-radius:6px;
+  padding:4px;
+  border:1px solid #ccc;
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:600px){
+  input{width:100%;}
+}
+
+</style>
+</head>
+
+<body>
+
+<a href="/dashboard" class="back">⬅ Dashboard</a>
+
+<div class="toggle" onclick="toggleMode()">🌗 Toggle</div>
+
+<h2>📦 Signed POD History</h2>
+
+<div class="card">
+
+<input type="text" id="searchInput"
+placeholder="🔍 Search by driver..."
+onkeyup="searchTable()">
+
+<input type="date" id="dateFilter"
+onchange="filterByDate()">
+
+<button onclick="deleteHistory()" class="btn danger">
+🗑 Delete POD History
+</button>
+
+<br><br>
+
+<table>
+<tr>
+  <th>POD No</th>
+  <th>Driver</th>
+  <th>Dispatch</th>
+  <th>Date</th>
+  <th>Download</th>
+  <th>Action</th>
+</tr>
+
+{{ROWS}}
+
+</table>
+
+</div>
+
+<script>
+
+function toggleMode(){
+  document.body.classList.toggle("light");
+}
+
+function deleteHistory(){
+  if(confirm("Are you sure you want to delete all POD history?")){
+    window.location="/pod-delete";
+  }
+}
+
+function searchTable(){
+  const input=document.getElementById("searchInput");
+  const filter=input.value.toLowerCase();
+  const rows=document.querySelectorAll("table tr");
+
+  rows.forEach((row,index)=>{
+    if(index===0) return;
+    const driver=row.children[1].innerText.toLowerCase();
+    row.style.display=driver.includes(filter)?"":"none";
+  });
+}
+
+function filterByDate(){
+  const selectedDate=document.getElementById("dateFilter").value;
+  if(!selectedDate) return;
+
+  const rows=document.querySelectorAll("table tr");
+
+  rows.forEach((row,index)=>{
+    if(index===0) return;
+    const rowDate=row.children[3].innerText;
+    const formatted=new Date(selectedDate).toLocaleDateString("en-ZA");
+    row.style.display=rowDate===formatted?"":"none";
+  });
+}
+
+</script>
+
+</body>
+</html>

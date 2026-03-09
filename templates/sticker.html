@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+
+  <style>
+    @page {
+      size: 210mm 298.4mm;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    /* A4 GRID: 2 columns × 4 rows */
+    .page {
+      width: 210mm;
+      height: 298.4mm;
+      display: grid;
+      grid-template-columns: repeat(2, 105mm);
+      grid-template-rows: repeat(4, 74.6mm);
+    }
+
+    /* SINGLE STICKER */
+    .sticker {
+      width: 105mm;
+      height: 74.6mm;
+      box-sizing: border-box;
+      padding: 4mm;
+      display: grid;
+      grid-template-columns: 40mm 1fr;
+      grid-template-rows: repeat(4, auto) 1fr;
+      font-size: 8.5pt;
+    }
+
+    .label {
+      font-weight: bold;
+      padding: 1mm;
+    }
+
+    .value {
+      padding: 1mm;
+    }
+
+    .barcode-label {
+      font-weight: bold;
+      padding: 1mm;
+    }
+
+    .barcode-area {
+      text-align: center;
+    }
+
+    .barcode-area img {
+      width: 90%;
+      height: 14mm;
+    }
+
+    .barcode-text {
+      font-size: 8pt;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="page">
+  {{STICKERS}}
+</div>
+
+</body>
+</html>

@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>QAS-TPCS Sticker Generator</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+/* ===== COLOR MODES ===== */
+:root{
+  --bg:#0f172a;
+  --card:#1f2937;
+  --text:white;
+  --input:#374151;
+  --btn:#3b82f6;
+}
+
+.light{
+  --bg:#f4f6f9;
+  --card:white;
+  --text:#111;
+  --input:#eee;
+  --btn:#007bff;
+}
+
+/* ===== BODY ===== */
+body{
+  margin:0;
+  font-family:Arial;
+  background:var(--bg);
+  color:var(--text);
+  transition:0.3s;
+}
+
+/* ===== BACK BUTTON ===== */
+.back{
+  position:fixed;
+  top:15px;
+  left:15px;
+  background:#555;
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  text-decoration:none;
+  font-size:14px;
+}
+
+.back:hover{
+  opacity:0.9;
+}
+
+/* ===== HEADER ===== */
+.header{
+  text-align:center;
+  padding:30px 10px 10px;
+  font-size:26px;
+  font-weight:bold;
+}
+
+/* ===== TOGGLE ===== */
+.toggle{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:var(--btn);
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  cursor:pointer;
+  font-size:14px;
+}
+
+/* ===== CARD ===== */
+.container{
+  display:flex;
+  justify-content:center;
+  margin-top:40px;
+}
+
+.card{
+  background:var(--card);
+  padding:35px;
+  border-radius:18px;
+  width:380px;
+  text-align:center;
+  box-shadow:0 10px 40px rgba(0,0,0,0.4);
+}
+
+/* ===== FILE BOX ===== */
+.file-box{
+  background:var(--input);
+  padding:15px;
+  border-radius:12px;
+  margin:20px 0;
+}
+
+.file-name{
+  margin-top:8px;
+  font-size:14px;
+  opacity:0.9;
+  word-break:break-all;
+}
+
+/* ===== BUTTON ===== */
+.btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  background:var(--btn);
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:10px;
+}
+
+.btn:hover{
+  opacity:0.9;
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:500px){
+  .card{width:90%;}
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- BACK BUTTON -->
+<a href="/dashboard" class="back">
+⬅ Dashboard
+</a>
+
+<div class="toggle" onclick="toggleMode()">
+🌗 Toggle Mode
+</div>
+
+<div class="header">
+📦 QAS-TPCS Sticker Generator
+</div>
+
+<div class="container">
+
+<div class="card">
+
+<h3><i class="fa-solid fa-file-excel"></i> Excel / CSV Batch Upload</h3>
+
+<form action="/batch" method="POST" enctype="multipart/form-data">
+
+<div class="file-box">
+<input type="file" name="file" id="fileInput" required
+onchange="showFileName()">
+
+<div class="file-name">
+</div>
+</div>
+
+<button class="btn">
+<i class="fa-solid fa-upload"></i>
+Upload & Generate Stickers
+</button>
+
+</form>
+
+</div>
+</div>
+
+<script>
+
+/* ===== MODE TOGGLE ===== */
+function toggleMode(){
+  document.body.classList.toggle("light");
+}
+
+/* ===== SHOW FILE NAME ===== */
+function showFileName(){
+  const input = document.getElementById("fileInput");
+  const name = input.files[0]?.name || "No file selected";
+  document.getElementById("fileName").innerText = name;
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>QAS-TPCS Dashboard</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+/* ===== COLORS ===== */
+:root{
+  --bg:#0f172a;
+  --text:white;
+  --card:rgba(255,255,255,0.15);
+  --table:rgba(255,255,255,0.12);
+}
+
+.light{
+  --bg:#f4f6f9;
+  --text:#111;
+  --card:rgba(255,255,255,0.7);
+  --table:white;
+}
+
+.light .logo{
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4));
+}
+
+/* ===== BODY ===== */
+body{
+  font-family:Arial;
+  margin:0;
+  padding:20px;
+  background:var(--bg);
+  color:var(--text);
+  transition:0.3s;
+  position:relative;
+}
+
+/* ===== SUBTLE GRADIENT DEPTH ===== */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(circle at 20% 20%,rgba(0,123,255,0.15),transparent 40%),
+    radial-gradient(circle at 80% 80%,rgba(0,200,255,0.12),transparent 40%);
+  pointer-events:none;
+  z-index:-1;
+}
+
+/* ===== HEADER ===== */
+h2{
+  text-align:center;
+  margin:-45px 0 5px 0;
+}
+
+.welcome{
+  text-align:center;
+  margin-bottom:25px;
+  font-size:15px;
+}
+
+/* ===== TOP BUTTONS ===== */
+.toggle{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:#007bff;
+  color:white;
+  padding:8px 14px;
+  border-radius:22px;
+  cursor:pointer;
+  z-index:1000;
+  font-size:14px;
+}
+
+.logout{
+  position:fixed;
+  top:15px;
+  left:15px;
+  background:#dc3545;
+  color:white;
+  padding:8px 14px;
+  border-radius:22px;
+  text-decoration:none;
+}
+
+/* ===== LOGO ===== */
+.logo{
+  width:clamp(120px, 20vw, 200px);
+  display:block;
+  margin:10px auto;
+  transition:0.4s;
+  filter:
+    invert(1)
+    grayscale(1)
+    brightness(0.9)
+    contrast(1.1)
+    drop-shadow(0 10px 20px rgba(0,0,0,0.6));
+}
+
+.light .logo{
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4));
+}
+
+.logo:hover{
+  transform:scale(1.05);
+  filter:
+    invert(1)
+    grayscale(1)
+    brightness(1.1)
+    contrast(1.2)
+    drop-shadow(0 0 25px rgba(200,210,220,0.6));
+}
+
+.logo{
+  position:relative;
+  overflow:hidden;
+}
+
+.logo::after{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-150%;
+  width:50%;
+  height:100%;
+  background:linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.25),
+    transparent
+  );
+  transform:skewX(-25deg);
+  transition:0.6s;
+}
+
+.logo:hover::after{
+  left:150%;
+}
+
+/* ===== CARDS ===== */
+.cards{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap:20px;
+  max-width:900px;
+  margin:auto;
+}
+
+.card{
+  padding:18px;
+  border-radius:15px;
+  text-align:center;
+  backdrop-filter:blur(12px);
+  background:var(--card);
+  box-shadow:0 8px 32px rgba(0,0,0,0.3);
+  transition:0.3s;
+}
+
+.card:hover{
+  transform:translateY(-6px);
+  box-shadow:
+    0 15px 40px rgba(0,0,0,0.4),
+    0 0 25px rgba(0,123,255,0.35);
+}
+
+.card.stickers{border-left:5px solid #00c6ff;}
+.card.pods{border-left:5px solid #28a745;}
+.card.driver{border-left:5px solid #f59e0b;}
+.card.parcel{border-left:5px solid #ff3b3b;}
+
+.card p{
+  font-size:28px;
+  font-weight:bold;
+}
+
+/* ===== BACKGROUND PICTURES FOR CARDS ===== */
+.card.stickers,
+.card.pods,
+.card.driver,
+.card.parcel{
+  position:relative;
+  overflow:hidden;
+}
+
+/* Image layer */
+.card.stickers::before,
+.card.pods::before,
+.card.driver::before,
+.card.parcel::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  opacity:0.55;
+  transform:scale(1.05);
+  z-index:0;
+}
+
+/* Set each card image */
+.card.stickers::before{
+  background-image:url("/stickers-sample.jpg");
+}
+
+.card.pods::before{
+  background-image:url("/pod-sample.jpg");
+}
+
+.card.driver::before{
+  background-image:url("/driver-road.jpg");
+}
+
+.card.parcel::before{
+  background-image:url("/parcel-boxes.jpg");
+}
+
+/* Dark overlay so text stays readable */
+.card.stickers::after,
+.card.pods::after,
+.card.driver::after,
+.card.parcel::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(to bottom, rgba(15,23,42,0.10), rgba(15,23,42,0.35));
+  z-index:0;
+}
+
+/* Keep heading + count above image */
+.card.stickers h3,
+.card.stickers p,
+.card.pods h3,
+.card.pods p,
+.card.driver h3,
+.card.driver p,
+.card.driver iframe,
+.card.parcel h3,
+.card.parcel p{
+  position:relative;
+  z-index:1;
+}
+
+/* ===== ACTIONS ===== */
+.actions{
+  position:fixed;
+  top:15px;
+  right:120px; 
+  display:flex;
+  gap:10px;
+  align-items:center;
+  z-index:999;
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  background:#007bff;
+  color:white;
+  border:none;
+  padding:8px 14px;
+  border-radius:22px;
+  cursor:pointer;
+  font-size:14px;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  white-space:nowrap;
+}
+
+.btn:hover{
+  background:#0056b3;
+}
+
+/* ===== DROPDOWN ===== */
+.dropdown{position:relative;}
+
+.dropdown-content{
+  display:none;
+  position:absolute;
+  background:#007bff;
+  min-width:200px;
+  border-radius:10px;
+  overflow:hidden;
+  top:40px;
+}
+
+.dropdown-content a{
+  color:white;
+  padding:10px;
+  display:block;
+  text-decoration:none;
+}
+
+.dropdown-content a:hover{background:#0056b3;}
+
+.dropdown.show .dropdown-content{display:block;}
+
+/* ===== SEARCH ===== */
+.search-box{
+  text-align:center;
+  margin:15px 0;
+}
+
+.search-box input{
+  padding:10px;
+  width:clamp(200px, 60%, 350px);
+  border-radius:8px;
+  border:none;
+}
+
+/* ===== TABLE ===== */
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:var(--table);
+  border-radius:12px;
+  overflow:hidden;
+}
+
+th{
+  background:#007bff;
+  color:white;
+  padding:12px;
+}
+
+td{
+  padding:12px;
+  text-align:center;
+  border:1px solid rgba(0,0,0,0.3);
+}
+
+tr:hover td{
+  background:rgba(0,123,255,0.15);
+}
+
+/* ===== LOADER ===== */
+#loader{
+  position:fixed;
+  inset:0;
+  background:#0f172a;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+
+#loader img{
+  width:120px;
+  animation:spin 2s linear infinite;
+  filter:invert(1);
+}
+
+@keyframes spin{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
+}
+
+/* ===== MOBILE ===== */
+@media(max-width:900px){
+  .actions{
+    position:static;
+    justify-content:center;
+    margin-top:10px;
+    flex-wrap:wrap;
+  }
+}
+
+@media(max-width:600px){
+  body{padding:12px;}
+  .cards{grid-template-columns:1fr;}
+}
+
+/* ===== GREEN LIVE DOTS ===== */
+h3::after{
+  content:"";
+  display:block;
+  width:8px;
+  height:8px;
+  background:#22c55e;
+  border-radius:50%;
+  margin:6px auto 0;
+  animation:pulse 1.5s infinite;
+}
+
+.activity-title::after{
+  display:inline-block;
+  margin-left:8px;
+  margin-top:0;
+}
+
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,0.7);}
+  70%{box-shadow:0 0 0 10px rgba(34,197,94,0);}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}
+}
+
+</style>
+</head>
+
+<body>
+
+<div id="loader">
+  <img src="/logo.png">
+</div>
+
+<a href="/logout" class="logout">
+<i class="fa-solid fa-right-from-bracket"></i> Logout
+</a>
+
+<div class="toggle" onclick="toggleMode()">🌗 Toggle</div>
+
+<img src="/logo.png" class="logo">
+
+<h2>📦 QAS-TPCS</h2>
+
+<div class="welcome">
+Logged in as <b>{{USER}}</b> ({{ROLE}})
+</div>
+
+<div class="actions">
+
+<!-- EXISTING -->
+<div class="dropdown" id="genDropdown">
+<button class="btn" onclick="toggleDropdown('genDropdown')">
+Generate Stickers ▼
+</button>
+<div class="dropdown-content">
+<a href="/batch">📄 Batch Generation</a>
+<a href="/manual">✍️ Manual Generat...</a>
+</div>
+</div>
+
+<a href="/jobs" class="btn">Manifest</a>
+<a href="/pod-history" class="btn">POD History</a>
+<button class="btn" onclick="exportTable()">⬇ Excel</button>
+
+<!-- ✅ NEW CHATS BUTTON -->
+<div class="dropdown" id="chatDropdown">
+<button class="btn" onclick="toggleDropdown('chatDropdown')">
+💬 Chats ▼ 
+<span id="badge"
+style="
+background:red;
+color:white;
+border-radius:50%;
+padding:2px 6px;
+font-size:12px;
+margin-left:4px;
+">0</span>
+</button>
+
+<div class="dropdown-content">
+<a href="/chat-service">🧑‍💼 Chat Service (Support)</a>
+<a href="/chat-tracking">🚚 Chat Tracking (Courier)</a>
+</div>
+</div>
+
+</div>
+
+<div class="cards">
+
+<div class="card stickers">
+<h3>Stickers Generated</h3>
+<p>{{STICKERS}}</p>
+</div>
+
+<div class="card pods">
+<h3>Number of PODs</h3>
+<p>{{PODS}}</p>
+</div>
+
+<div class="card driver">
+<h3>🚚 Driver Tracking</h3>
+<iframe
+src="https://maps.google.com/maps?q=Johannesburg&t=&z=12&ie=UTF8&iwloc=&output=embed"
+width="100%" height="180"
+style="border-radius:12px;border:none;margin-top:10px;">
+</iframe>
+</div>
+
+<div class="card parcel" onclick="location.href='/tracking'">
+<h3>📦 Parcel Tracking</h3>
+<p>Track Shipment</p>
+</div>
+
+</div>
+
+<div class="search-box">
+<input type="text" id="searchInput"
+placeholder="🔍 Search..."
+onkeyup="searchTable()">
+</div>
+
+<h3 class="activity-title">Recent Activity</h3>
+
+<table id="activityTable">
+<tr>
+<th>Type</th>
+<th>File</th>
+<th>Date</th>
+</tr>
+{{ROWS}}
+</table>
+
+<script>
+
+window.onload=function(){
+  document.getElementById("loader").style.display="none";
+}
+
+function toggleMode(){
+  document.body.classList.toggle("light");
+}
+
+/* UPDATED FOR MULTIPLE DROPDOWNS */
+function toggleDropdown(id){
+  document.getElementById(id).classList.toggle("show");
+}
+
+window.onclick=function(e){
+  if(!e.target.matches('.btn')){
+    document.querySelectorAll(".dropdown")
+      .forEach(d=>d.classList.remove("show"));
+  }
+}
+
+function searchTable(){
+  const input=document.getElementById("searchInput").value.toLowerCase();
+  const rows=document.querySelectorAll("#activityTable tr");
+  rows.forEach((row,i)=>{
+    if(i===0) return;
+    row.style.display=
+      row.innerText.toLowerCase().includes(input)?"":"none";
+  });
+}
+
+function exportTable(){
+  let table=document.getElementById("activityTable").outerHTML;
+  let data='application/vnd.ms-excel,'+encodeURIComponent(table);
+  let a=document.createElement('a');
+  a.href='data:'+data;
+  a.download='dashboard.xls';
+  a.click();
+}
+
+</script>
+
+
+<script>
+let count = 0;
+document.getElementById("badge").innerText = count;
+</script>
+
+</script>
+
+</body>
+</html>

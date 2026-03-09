@@ -1,0 +1,21 @@
+{
+  "name": "qas-tpcs",
+  "version": "1.0.0",
+  "description": "QAS-TPCS Courier System",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bwip-js": "^4.8.0",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "iconv-lite": "^0.7.2",
+    "multer": "^2.0.2",
+    "puppeteer": "^24.36.0",
+    "xlsx": "^0.18.5"
+  }
+}

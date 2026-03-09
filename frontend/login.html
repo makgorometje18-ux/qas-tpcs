@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>QAS-TPCS Login</title>
+
+<link rel="manifest" href="/manifest.json">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+
+/* ===== COLORS ===== */
+:root{
+  --bg:#0f172a;
+  --card:#1f2937;
+  --text:white;
+  --input:#374151;
+  --btn:#3b82f6;
+  --green:#22c55e;
+  --error:#ff4d4d;
+}
+
+.light{
+  --bg:#f4f6f9;
+  --card:white;
+  --text:#111;
+  --input:#eee;
+  --btn:#007bff;
+  --green:#28a745;
+}
+
+/* ===== BODY ===== */
+body{
+  margin:0;
+  font-family:Arial;
+  background:var(--bg);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+  color:var(--text);
+  transition:0.3s;
+}
+
+/* ===== TOGGLE ===== */
+.toggle{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:var(--btn);
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  cursor:pointer;
+}
+
+/* ===== CARD ===== */
+.card{
+  background:var(--card);
+  padding:40px 35px;
+  border-radius:20px;
+  width:380px;
+  text-align:center;
+  box-shadow:0 15px 40px rgba(0,0,0,0.5);
+}
+
+/* ===== INPUTS ===== */
+.input-box{
+  position:relative;
+}
+
+input, select{
+  width:100%;
+  padding:16px;
+  margin:12px 0;
+  border-radius:12px;
+  border:none;
+  background:var(--input);
+  color:var(--text);
+  font-size:15px;
+  box-sizing:border-box;
+}
+
+input::placeholder{
+  color:#888;
+}
+
+/* ===== ERROR MESSAGE ===== */
+#errorMsg{
+  color:var(--error);
+  font-weight:bold;
+  margin-bottom:10px;
+  display:none;
+}
+
+/* ===== EYE ICON ===== */
+.eye{
+  position:absolute;
+  right:15px;
+  top:50%;
+  transform:translateY(-50%);
+  cursor:pointer;
+  color:#666;
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  width:100%;
+  padding:16px;
+  border:none;
+  border-radius:12px;
+  background:var(--btn);
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+  margin-top:12px;
+}
+
+.btn:hover{
+  opacity:0.95;
+}
+
+.create-btn{
+  background:var(--green);
+}
+
+/* ===== REGISTER FORM ===== */
+#registerForm{
+  display:none;
+  margin-top:20px;
+  border-top:1px solid #444;
+  padding-top:20px;
+}
+
+/* ===== SUCCESS POPUP ===== */
+.popup{
+  position:fixed;
+  top:20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#22c55e;
+  color:white;
+  padding:12px 25px;
+  border-radius:8px;
+  display:none;
+}
+
+small{
+  display:block;
+  margin-top:18px;
+  opacity:0.7;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- DARK MODE TOGGLE -->
+<div class="toggle" onclick="toggleMode()">🌗 Mode</div>
+
+<!-- SUCCESS POPUP -->
+<div class="popup" id="popup">
+✅ User Created Successfully!
+</div>
+
+<div class="card">
+
+<h2>📦 QAS-TPCS Login</h2>
+
+<!-- ERROR MESSAGE -->
+<div id="errorMsg">
+❌ Incorrect username or password
+</div>
+
+<!-- LOGIN -->
+<form method="POST" action="/login">
+
+<input name="username" placeholder="Username" required>
+
+<div class="input-box">
+<input type="password" id="loginPass"
+name="password" placeholder="Password" required>
+
+<i class="fa-solid fa-eye eye"
+onclick="togglePass('loginPass', this)"></i>
+</div>
+
+<button class="btn">
+<i class="fa-solid fa-right-to-bracket"></i>
+Login
+</button>
+
+</form>
+
+<!-- CREATE USER BUTTON -->
+<button class="btn create-btn" onclick="toggleRegister()">
+<i class="fa-solid fa-user-plus"></i>
+Create User
+</button>
+
+<!-- REGISTER FORM -->
+<form method="POST"
+action="/register"
+id="registerForm"
+onsubmit="showPopup()">
+
+<input name="username"
+placeholder="New Username" required>
+
+<div class="input-box">
+<input type="password" id="regPass"
+name="password"
+placeholder="New Password" required>
+
+<i class="fa-solid fa-eye eye"
+onclick="togglePass('regPass', this)"></i>
+</div>
+
+<select name="role">
+<option value="staff">Staff</option>
+<option value="admin">Admin</option>
+</select>
+
+<button class="btn create-btn">
+Create User
+</button>
+
+</form>
+
+<small>Secure Logistics System</small>
+
+</div>
+
+<script>
+
+/* ===== SHOW LOGIN ERROR ===== */
+const params = new URLSearchParams(window.location.search);
+if(params.get("error")){
+  document.getElementById("errorMsg").style.display="block";
+}
+
+/* ===== DARK MODE ===== */
+function toggleMode(){
+  document.body.classList.toggle("light");
+}
+
+/* ===== SHOW/HIDE PASSWORD ===== */
+function togglePass(id, icon){
+  const input = document.getElementById(id);
+
+  if(input.type === "password"){
+    input.type = "text";
+    icon.classList.replace("fa-eye","fa-eye-slash");
+  }else{
+    input.type = "password";
+    icon.classList.replace("fa-eye-slash","fa-eye");
+  }
+}
+
+/* ===== TOGGLE REGISTER ===== */
+function toggleRegister(){
+  const form = document.getElementById("registerForm");
+  form.style.display =
+    form.style.display === "block" ? "none" : "block";
+}
+
+/* ===== SUCCESS POPUP ===== */
+function showPopup(){
+  const p = document.getElementById("popup");
+  p.style.display = "block";
+
+  setTimeout(()=>{
+    p.style.display="none";
+  },2000);
+}
+
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js");
+}
+</script>
+
+</body>
+</html>

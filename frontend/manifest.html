@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+
+<style>
+
+/* ===== DARK/LIGHT COLORS ===== */
+:root{
+  --bg:#0f172a;
+  --text:white;
+  --box:#1e293b;
+  --accent:#3b82f6;
+}
+
+.light{
+  --bg:#f4f6f9;
+  --text:#111;
+  --box:white;
+  --accent:#007bff;
+}
+
+body{
+  font-family:Arial;
+  padding:30px;
+  background:var(--bg);
+  color:var(--text);
+  transition:0.3s;
+}
+
+/* ===== DASHBOARD BUTTON ===== */
+.dashboard-btn{
+  position:fixed;
+  top:5px;
+  left:15px;
+  background:#6b7280;
+  color:white;
+  padding:10px 22px;
+  border-radius:30px;
+  text-decoration:none;
+  font-size:16px;
+  z-index:999;
+}
+
+/* ===== TOGGLE ===== */
+.toggle{
+  position:fixed;
+  top:5px;
+  right:15px;
+  background:var(--accent);
+  color:white;
+  padding:10px 22px;
+  border-radius:30px;
+  cursor:pointer;
+  z-index:999;
+}
+
+/* ===== HEADER ===== */
+.top-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-top:60px;
+}
+
+.logo{
+  font-size:26px;
+  font-weight:bold;
+}
+
+h2{
+  text-align:center;
+  margin:10px 0;
+}
+
+/* ===== INFO TABLE ===== */
+.info-table{
+  width:100%;
+  margin-top:10px;
+}
+
+.info-table td{
+  padding:6px;
+}
+
+/* ===== SHIPMENT TABLE ===== */
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+  background:var(--box);
+}
+
+th,td{
+  border:1px solid #000;
+  padding:10px;
+  font-size:13px;
+}
+
+th{
+  background:var(--accent);
+  color:white;
+}
+
+.shipment-table td{
+  text-align:center;
+}
+
+/* ===== SIGN-OFF BOXES ===== */
+.sign-box{
+  background:var(--box);
+  padding:20px;
+  border:2px solid #000;
+  height:100%;
+}
+
+.sign-box label{
+  display:block;
+  margin-top:12px;
+  margin-bottom:4px;
+  font-weight:bold;
+}
+
+input{
+  padding:10px;
+  width:100%;
+  border-radius:6px;
+  border:none;
+  box-sizing:border-box;
+}
+
+/* ===== SIGNATURE PAD ===== */
+canvas{
+  background:white;
+  border:2px solid #000;
+  width:100%;
+  height:120px;
+  touch-action:none;
+  cursor:crosshair;
+  display:block;
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  padding:10px 18px;
+  background:var(--accent);
+  color:white;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  margin-top:8px;
+  margin-right:6px;
+}
+
+/* ===== BUTTON ROW ===== */
+.btn-row{
+  margin-top:20px;
+}
+
+/* ===== TERMS BOX ===== */
+.terms{
+  margin-top:10px;
+  margin-bottom:35px;
+  padding:15px;
+  border:2px solid #000;
+  background:white;
+  color:black;
+  font-size:13px;
+  line-height:1.5;
+}
+
+/* ===== PRINT FIX ===== */
+@media print{
+  body{
+    background:white !important;
+    color:black !important;
+  }
+
+  table, th, td{
+    border:1px solid black !important;
+    color:black !important;
+  }
+
+  th{background:#ddd !important;}
+
+  .toggle,.btn,.dashboard-btn{
+    display:none;
+  }
+
+  .sign-box{
+    border:3px solid black !important;
+    background:white !important;
+    padding:20px;
+  }
+
+  input{
+    border:2px solid black !important;
+    height:35px;
+    background:white !important;
+    color:black !important;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<a href="/dashboard" class="dashboard-btn">← Dashboard</a>
+<div class="toggle" onclick="toggleMode()">🌗 Toggle</div>
+
+<div class="top-row">
+  <div class="logo">QAS-TPCS</div>
+  <div style="font-size:16px;font-weight:bold;">
+    Manifest No: {{MANIFEST}}
+  </div>
+</div>
+
+<h2>COLLECTION MANIFEST</h2>
+
+<table class="info-table">
+<tr>
+<td><b>Collection Date:</b> {{DATE}}</td>
+<td><b>Total Shipments:</b> {{TOTAL}}</td>
+</tr>
+
+<tr>
+<td>
+<b>Collection Address:</b>
+<input value="19 London Circle, Bracken Gate 1 Business Park, Brackenfell">
+</td>
+
+<td><b>Created By:</b> QAS-TPCS System</td>
+</tr>
+</table>
+
+<br>
+
+<b>SHIPMENT DETAILS</b>
+
+<table class="shipment-table">
+<tr>
+<th>Barcode Number</th>
+<th>Branch Code</th>
+<th>Branch Name</th>
+<th>Number of Parcels</th>
+<th>Service</th>
+</tr>
+
+{{ROWS}}
+</table>
+
+<form method="POST" action="/manifest-sign" onsubmit="saveSigs()">
+
+<div class="terms">
+<b>TERMS AND CONDITIONS</b><br><br>
+I, the undersigned, hereby acknowledge receipt of this sealed package and confirm that it shows no visible signs of tampering at the time of collection. I accept full responsibility for the safekeeping and proper use of the package in accordance with all applicable terms and conditions.
+
+  <br><br>
+
+  I further agree that IDEMIA shall not be held liable for any loss, damage, or interception of personal documents contained within the package, nor for any consequences arising therefrom. By signing, I indemnify and hold IDEMIA harmless against any such loss, damage, or consequence.
+  </div>
+
+<b>COLLECTION SIGN-OFF</b>
+
+<table style="border:none;width:100%;margin-top:10px;">
+<tr>
+
+<td style="width:50%;border:none;vertical-align:top;">
+<div class="sign-box">
+
+<b>Driver Collection</b>
+
+<label>Name</label>
+<input name="driverName" required>
+
+<label>Signature</label>
+<canvas id="sig1"></canvas>
+
+<button type="button" class="btn" onclick="c1.undo()">Undo</button>
+<button type="button" class="btn" onclick="clearSig('sig1')">Clear Signature</button>
+
+<input type="hidden" name="driverSign" id="driverSign">
+
+<label>Date</label>
+<input type="date" name="driverDate" required>
+
+</div>
+</td>
+
+<td style="width:50%;border:none;vertical-align:top;">
+<div class="sign-box">
+
+<b>Dispatch Release</b>
+
+<label>Name</label>
+<input name="dispatchName" required>
+
+<label>Signature</label>
+<canvas id="sig2"></canvas>
+
+<button type="button" class="btn" onclick="c2.undo()">Undo</button>
+<button type="button" class="btn" onclick="clearSig('sig2')">Clear Signature</button>
+
+<input type="hidden" name="dispatchSign" id="dispatchSign">
+
+<label>Date</label>
+<input type="date" name="dispatchDate" required>
+
+</div>
+</td>
+
+</tr>
+</table>
+
+<div class="btn-row">
+<button type="button" onclick="window.print()" class="btn">
+🖨 Print Manifest
+</button>
+
+<button type="submit" class="btn">
+Save & Generate Signed POD
+</button>
+</div>
+
+</form>
+
+<script>
+
+function toggleMode(){
+  document.body.classList.toggle("light");
+}
+
+/* SIGNATURE PAD */
+function setup(canvas){
+  const ctx = canvas.getContext("2d");
+  let drawing=false, paths=[], current=[];
+
+  function resize(){
+    canvas.width=canvas.offsetWidth;
+    canvas.height=canvas.offsetHeight;
+    redraw();
+  }
+  window.addEventListener("resize",resize);
+  resize();
+
+  function start(e){drawing=true; current=[]; draw(e);}
+  function end(){drawing=false; paths.push(current); ctx.beginPath();}
+  function draw(e){
+    if(!drawing) return;
+    const r=canvas.getBoundingClientRect();
+    const x=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+    const y=(e.touches?e.touches[0].clientY:e.clientY)-r.top;
+    current.push({x,y});
+    ctx.lineWidth=2; ctx.lineCap="round"; ctx.strokeStyle="#000";
+    ctx.lineTo(x,y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,y);
+  }
+
+  function redraw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.lineWidth=2; ctx.lineCap="round"; ctx.strokeStyle="#000";
+    paths.forEach(p=>{
+      ctx.beginPath();
+      p.forEach((pt,i)=> i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));
+      ctx.stroke();
+    });
+  }
+
+  canvas.onmousedown=start;
+  canvas.onmouseup=end;
+  canvas.onmousemove=draw;
+  canvas.ontouchstart=start;
+  canvas.ontouchend=end;
+  canvas.ontouchmove=draw;
+
+  return {
+    undo(){paths.pop(); redraw();},
+    clear(){paths=[]; redraw();},
+    toDataURL(){return canvas.toDataURL();}
+  };
+}
+
+const c1=setup(document.getElementById("sig1"));
+const c2=setup(document.getElementById("sig2"));
+
+function saveSigs(){
+  document.getElementById("driverSign").value=c1.toDataURL();
+  document.getElementById("dispatchSign").value=c2.toDataURL();
+}
+
+function clearSig(id){
+  if(id==="sig1") c1.clear();
+  if(id==="sig2") c2.clear();
+}
+
+</script>
+
+</body>
+</html>

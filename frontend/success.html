@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generating...</title>
+
+  <style>
+    body{
+      font-family: Arial;
+      text-align: center;
+      padding: 40px;
+    }
+
+    #progressContainer{
+      width: 60%;
+      background: #eee;
+      margin: 30px auto;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #progressBar{
+      height: 25px;
+      width: 0%;
+      background: #3498db;
+      transition: width 0.3s;
+    }
+
+    #percent{
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    #success{
+      display: none;
+      margin-top: 30px;
+    }
+
+    .checkmark{
+      font-size: 60px;
+      color: green;
+    }
+  </style>
+
+</head>
+
+<body>
+
+<h2>Generating Stickers...</h2>
+
+<div id="progressContainer">
+  <div id="progressBar"></div>
+</div>
+
+<div id="percent">0%</div>
+
+<div id="success">
+  <div class="checkmark">✔</div>
+  <h3>Stickers Generated Successfully</h3>
+  <p>Opening manifest...</p>
+</div>
+
+<script>
+
+let progress = 0;
+
+const bar = document.getElementById("progressBar");
+const percent = document.getElementById("percent");
+const success = document.getElementById("success");
+
+const interval = setInterval(() => {
+
+  progress += 10;
+  bar.style.width = progress + "%";
+  percent.innerText = progress + "%";
+
+  if(progress >= 100){
+    clearInterval(interval);
+
+    // Show success message
+    success.style.display = "block";
+
+    // Download file
+    window.location.href = "{{DOWNLOAD_LINK}}";
+
+    // Open manifest
+    setTimeout(() => {
+      window.location.href = "/jobs";
+    }, 2500);
+  }
+
+}, 200);
+
+</script>
+
+</body>
+</html>

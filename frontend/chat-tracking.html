@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Driver Chat</title>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+
+/* ===== DARK/LIGHT MODE ===== */
+:root{
+  --bg:#0f172a;
+  --text:white;
+  --me:#22c55e;
+  --driver:#3b82f6;
+  --input:#111827;
+  --accent:#3b82f6;
+}
+
+.light{
+  --bg:#f4f6f9;
+  --text:#111;
+  --me:#dcf8c6;
+  --driver:#e0edff;
+  --input:#e5e7eb;
+  --accent:#007bff;
+}
+
+body{
+  font-family:Arial;
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  transition:.3s;
+}
+
+/* ===== TOP BUTTONS ===== */
+.back{
+  position:fixed;
+  top:15px;
+  left:15px;
+  background:#555;
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  text-decoration:none;
+}
+
+.toggle{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:var(--accent);
+  color:white;
+  padding:8px 14px;
+  border-radius:20px;
+  cursor:pointer;
+}
+
+h3{
+  text-align:center;
+  margin-top:60px;
+}
+
+/* ===== CHAT AREA ===== */
+#messages{
+  padding:10px;
+  height:65vh;
+  overflow-y:auto;
+}
+
+/* ===== BUBBLES ===== */
+.msg{
+  padding:10px 14px;
+  margin:6px;
+  border-radius:15px;
+  max-width:65%;
+  clear:both;
+  color:black;
+}
+
+.me{
+  background:var(--me);
+  margin-left:auto;
+}
+
+.driver{
+  background:var(--driver);
+  margin-right:auto;
+}
+
+/* ===== INPUT ===== */
+.input-area{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:var(--input);
+  padding:10px;
+  display:flex;
+}
+
+#msg{
+  flex:1;
+  padding:12px;
+  border-radius:20px;
+  border:none;
+}
+
+button{
+  margin-left:10px;
+  padding:10px 18px;
+  border:none;
+  border-radius:20px;
+  background:#007bff;
+  color:white;
+  cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<a href="/dashboard" class="back">⬅ Dashboard</a>
+<div class="toggle" onclick="toggleMode()">🌗 Toggle</div>
+
+<h3>🚚 Parcel Tracking Chat</h3>
+
+<div id="messages"></div>
+
+<div class="input-area">
+  <input id="msg" placeholder="Type message...">
+  <button onclick="send()">Send</button>
+</div>
+
+<script>
+
+/* ===== MODE TOGGLE ===== */
+function toggleMode(){
+  document.body.classList.toggle("light");
+}
+
+/* ===== SOCKET ===== */
+const socket = io();
+const username = "User";
+
+/* ===== SEND ===== */
+function send(){
+  const input=document.getElementById("msg");
+  const text=input.value.trim();
+  if(!text) return;
+
+  // show instantly
+  add("me","Me: "+text);
+
+  socket.emit("driver-message",{
+    user:username,
+    message:text
+  });
+
+  input.value="";
+}
+
+/* ===== RECEIVE ===== */
+socket.on("driver-message",data=>{
+  // prevent duplicate self messages
+  if(data.user===username) return;
+
+  add("driver","Driver: "+data.message);
+});
+
+/* ===== ADD BUBBLE ===== */
+function add(type,text){
+  const d=document.createElement("div");
+  d.className="msg "+type;
+  d.innerText=text;
+
+  const box=document.getElementById("messages");
+  box.appendChild(d);
+  box.scrollTop=box.scrollHeight;
+}
+
+</script>
+
+</body>
+</html>

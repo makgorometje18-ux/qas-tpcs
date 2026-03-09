@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Chat</title>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<style>
+body{
+  font-family:Arial;
+  background:#e5ddd5;
+  margin:0;
+}
+
+#chat{
+  max-width:600px;
+  margin:auto;
+  height:90vh;
+  display:flex;
+  flex-direction:column;
+}
+
+#messages{
+  flex:1;
+  overflow:auto;
+  padding:10px;
+}
+
+.msg{
+  padding:10px;
+  margin:5px;
+  border-radius:10px;
+  max-width:70%;
+}
+
+.me{
+  background:#dcf8c6;
+  margin-left:auto;
+}
+
+.other{
+  background:white;
+}
+
+#input{
+  display:flex;
+}
+
+input{
+  flex:1;
+  padding:10px;
+}
+
+button{
+  padding:10px;
+  background:#128c7e;
+  color:white;
+  border:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="chat">
+<h3>💬 Support Chat</h3>
+
+<div id="messages"></div>
+
+<div id="input">
+<input id="msg" placeholder="Type message...">
+<button onclick="send()">Send</button>
+</div>
+</div>
+
+<script>
+
+const socket = io();
+
+const username = prompt("Enter your name");
+socket.emit("register", username);
+
+function send(){
+  const text = msg.value;
+
+  socket.emit("support-message", {
+    user: username,
+    message: text
+  });
+
+  addMessage(username, text, true);
+
+  msg.value="";
+}
+
+socket.on("support-message", data=>{
+  addMessage(data.user, data.message, false);
+});
+
+function addMessage(user,text,me){
+  const div=document.createElement("div");
+  div.className="msg "+(me?"me":"other");
+  div.innerHTML="<b>"+user+":</b> "+text;
+  messages.appendChild(div);
+  messages.scrollTop=messages.scrollHeight;
+}
+</script>
+
+</body>
+</html>

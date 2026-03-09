@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+
+  <style>
+    @page {
+      size: 210mm 298.4mm;
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    /* A4 GRID: 2 columns × 4 rows */
+    .page {
+      width: 210mm;
+      height: 298.4mm;
+      display: grid;
+      grid-template-columns: repeat(2, 105mm);
+      grid-template-rows: repeat(4, 74.6mm);
+    }
+
+    /* SINGLE STICKER */
+    .sticker {
+      width: 105mm;
+      height: 74.6mm;
+      box-sizing: border-box;
+      padding: 4mm;
+      display: grid;
+      grid-template-columns: 40mm 1fr;
+      grid-template-rows: repeat(4, auto) 1fr;
+      font-size: 8.5pt;
+    }
+
+    .label {
+      font-weight: bold;
+      padding: 1mm;
+    }
+
+    .value {
+      padding: 1mm;
+    }
+
+    .barcode-label {
+      font-weight: bold;
+      padding: 1mm;
+    }
+
+    .barcode-area {
+      text-align: center;
+    }
+
+    .barcode-area img {
+      width: 90%;
+      height: 14mm;
+    }
+
+    .barcode-text {
+      font-size: 8pt;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="page">
+  
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201515</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2126</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">PE Motherwell 31</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201515.png">
+          <div class="barcode-text">201515</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201516</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2126</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">PE Motherwell 31</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201516.png">
+          <div class="barcode-text">201516</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201519</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2232</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Hermanus</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201519.png">
+          <div class="barcode-text">201519</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201529</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2460</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">PE Booysens Park Shopping Centre</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201529.png">
+          <div class="barcode-text">201529</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201545</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4343</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Athlone Vangate Mall 52</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201545.png">
+          <div class="barcode-text">201545</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201550</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4422</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Mini-Stellenbosch Die Boord</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201550.png">
+          <div class="barcode-text">201550</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201511</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2070</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Welkom Bok</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201511.png">
+          <div class="barcode-text">201511</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201512</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2104</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Lydenburg Voortrekker</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201512.png">
+          <div class="barcode-text">201512</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201514</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2111</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Vereeniging Voortrekker</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201514.png">
+          <div class="barcode-text">201514</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201518</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2178</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Tsakane Mall 91</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201518.png">
+          <div class="barcode-text">201518</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201522</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2299</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Johannesburg Station West</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201522.png">
+          <div class="barcode-text">201522</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201525</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2351</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Stutterheim</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201525.png">
+          <div class="barcode-text">201525</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201527</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">2418</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Mamelodi Square</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201527.png">
+          <div class="barcode-text">201527</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201530</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4003</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Menlyn Mall</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201530.png">
+          <div class="barcode-text">201530</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201531</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4006</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Johannesburg The Glen</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201531.png">
+          <div class="barcode-text">201531</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201533</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4093</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">East London Southernwood</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201533.png">
+          <div class="barcode-text">201533</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201534</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4147</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Wadeville</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201534.png">
+          <div class="barcode-text">201534</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201543</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4332</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Centurion Olievenhoutbosch</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201543.png">
+          <div class="barcode-text">201543</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201544</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4341</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Witbank Ben Fleur Centre</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201544.png">
+          <div class="barcode-text">201544</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201546</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4354</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Mall of Africa</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201546.png">
+          <div class="barcode-text">201546</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201547</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4383</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Umzimkulu Mall</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201547.png">
+          <div class="barcode-text">201547</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201549</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4391</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Lenasia Signet Terrace</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201549.png">
+          <div class="barcode-text">201549</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201551</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4430</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Pretoria Middestad Mall</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201551.png">
+          <div class="barcode-text">201551</div>
+        </div>
+      </div>
+    
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">201552</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">23/10/2025</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">4481</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">Witbank Kwa-Guqa 13</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="barcode-201552.png">
+          <div class="barcode-text">201552</div>
+        </div>
+      </div>
+    
+</div>
+
+</body>
+</html>
