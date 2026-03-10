@@ -1,12 +1,11 @@
 {
-  "name": "backend",
+  "name": "qas-tpcs",
   "version": "1.0.0",
-  "description": "",
+  "description": "QAS-TPCS Courier System",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
-  "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
