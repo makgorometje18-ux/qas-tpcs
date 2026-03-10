@@ -48,7 +48,13 @@ body{
   cursor:pointer;
 }
 
-h1{margin-top:60px;}
+h1{
+  margin-top:60px;
+}
+
+.search-box{
+  margin-top:20px;
+}
 
 input{
   padding:14px;
@@ -67,10 +73,20 @@ button{
   cursor:pointer;
 }
 
+.ref-box{
+  max-width:500px;
+  margin:25px auto 10px;
+  background:var(--card);
+  padding:14px;
+  border-radius:12px;
+  font-weight:bold;
+  text-align:left;
+}
+
 /* TIMELINE */
 .timeline{
   max-width:500px;
-  margin:30px auto;
+  margin:20px auto 30px;
   text-align:left;
 }
 
@@ -79,10 +95,6 @@ button{
   padding:15px;
   border-radius:12px;
   margin-bottom:15px;
-  border-left:6px solid #374151;
-}
-
-.done{
   border-left:6px solid var(--accent);
 }
 
@@ -91,10 +103,17 @@ button{
   font-size:18px;
 }
 
-.loc{opacity:.9}
-.date{opacity:.7;font-size:14px}
+.loc{
+  opacity:.9;
+  margin-top:6px;
+}
 
-/* Delivered badge */
+.date{
+  opacity:.7;
+  font-size:14px;
+  margin-top:6px;
+}
+
 .delivered{
   background:#22c55e;
   padding:10px;
@@ -102,6 +121,11 @@ button{
   text-align:center;
   font-weight:bold;
   margin-top:20px;
+}
+
+.error{
+  margin-top:25px;
+  font-weight:bold;
 }
 </style>
 </head>
@@ -113,55 +137,79 @@ button{
 
 <h1>📦 Track Parcel</h1>
 
-<input id="code" placeholder="Enter tracking number">
-<button onclick="track()">Track</button>
+<div class="search-box">
+  <input id="code" placeholder="Enter tracking number">
+  <button onclick="track()">Track</button>
+</div>
 
+<div id="referenceBox"></div>
 <div id="result" class="timeline"></div>
 
 <script>
-
 function toggle(){
   document.body.classList.toggle("light");
 }
 
-async function track(){
-  const code=document.getElementById("code").value.trim();
-  if(!code) return;
-
-  const res=await fetch("/track/"+code);
-  const data=await res.json();
-
-  const box=document.getElementById("result");
-  box.innerHTML="";
-
-  if(data.length===0){
-    box.innerHTML="<h3>No tracking found</h3>";
-    return;
-  }
-
-  let delivered=true;
-
-  data.forEach(step=>{
-    if(!step.completed) delivered=false;
-
-    box.innerHTML+=`
-      <div class="step ${step.completed?'done':''}">
-        <div class="status">${step.status}</div>
-        <div class="loc">📍 ${step.location}</div>
-        <div class="date">🕒 ${step.date}</div>
-      </div>
-    `;
-  });
-
-  if(delivered){
-    box.innerHTML+=`
-      <div class="delivered">
-        ✅ Parcel Delivered
-      </div>
-    `;
-  }
+function formatDate(value){
+  if(!value) return "";
+  const d = new Date(value);
+  if(isNaN(d)) return value;
+  return d.toLocaleString("en-ZA");
 }
 
+async function track(){
+  const code = document.getElementById("code").value.trim();
+  const box = document.getElementById("result");
+  const refBox = document.getElementById("referenceBox");
+
+  refBox.innerHTML = "";
+  box.innerHTML = "";
+
+  if(!code) return;
+
+  try{
+    const res = await fetch("/track/" + encodeURIComponent(code));
+    const data = await res.json();
+
+    if(!Array.isArray(data) || data.length === 0){
+      box.innerHTML = "<div class='error'>No tracking found</div>";
+      return;
+    }
+
+    refBox.innerHTML = `
+      <div class="ref-box">
+        Reference Number: ${code}
+      </div>
+    `;
+
+    let delivered = false;
+
+    data.forEach(step => {
+      if(String(step.status).toLowerCase() === "delivered"){
+        delivered = true;
+      }
+
+      box.innerHTML += `
+        <div class="step">
+          <div class="status">${step.status || ""}</div>
+          <div class="loc">📍 ${step.location || ""}</div>
+          <div class="date">🕒 ${formatDate(step.created_at)}</div>
+        </div>
+      `;
+    });
+
+    if(delivered){
+      box.innerHTML += `
+        <div class="delivered">
+          ✅ Parcel Delivered
+        </div>
+      `;
+    }
+  }catch(err){
+    console.error(err);
+    box.innerHTML = "<div class='error'>Error loading tracking</div>";
+  }
+}
 </script>
 
 </body>
