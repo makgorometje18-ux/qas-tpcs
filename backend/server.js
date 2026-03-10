@@ -1,11 +1,10 @@
-if (process.env.NODE_ENV !== "production") {
-  require("dotenv").config();
-}
+require("dotenv").config();
 
 const path = require("path");
 const express = require("express");
 const session = require("express-session");
 const fs = require("fs");
+const supabase = require("./supabase");
 
 const app = express();
 
@@ -45,27 +44,32 @@ app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/login.html"));
 });
 
-/* ===== LOGIN POST ===== */
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+/* ===== LOGIN POST (DATABASE LOGIN) ===== */
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
 
-  if (username === "admin" && password === "1234") {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("username", username)
+      .eq("password", password)
+      .single();
+
+    if (error || !data) {
+      return res.send("Invalid login");
+    }
+
     req.session.user = {
-      username: "admin",
-      role: "admin"
+      username: data.username,
+      role: data.role
     };
-    return res.redirect("/dashboard");
-  }
 
-  if (username === "staff" && password === "1234") {
-    req.session.user = {
-      username: "staff",
-      role: "staff"
-    };
     return res.redirect("/dashboard");
+  } catch (err) {
+    console.error("Login error:", err);
+    return res.status(500).send("Server error during login");
   }
-
-  return res.send("Invalid login");
 });
 
 /* ===== LOGOUT ===== */
@@ -122,8 +126,6 @@ app.get("/chat-tracking", requireLogin, (req, res) => {
 });
 
 /* ===== TEMPORARY PLACEHOLDER ROUTES FOR VERCEL ===== */
-/* These depended on local file storage / realtime / PDFs and are disabled for now */
-
 app.get("/jobs", requireLogin, (req, res) => {
   res.send("Jobs page will be connected after storage migration.");
 });
@@ -176,8 +178,6 @@ app.get("/track/:code", requireLogin, (req, res) => {
   res.json([]);
 });
 
-const supabase = require("./supabase");
-
 app.get("/test-db", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -205,5 +205,4 @@ app.get("/test-db", async (req, res) => {
   }
 });
 
-/* ===== EXPORT APP FOR VERCEL ===== */
 module.exports = app;
