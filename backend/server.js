@@ -211,10 +211,38 @@ app.post("/batch", requireLogin, (req, res) => {
     .send("Batch upload is temporarily disabled on this Vercel version.");
 });
 
-app.post("/manual", requireLogin, (req, res) => {
-  res
-    .status(501)
-    .send("Manual sticker generation is temporarily disabled on this Vercel version.");
+app.post("/manual", requireLogin, async (req, res) => {
+  try {
+    const rows = req.body.Order_No.map((_, i) => ({
+      Order_No: req.body.Order_No[i],
+      Order_Creation_Date: req.body.Order_Creation_Date[i],
+      Branch_Code: req.body.Branch_Code[i],
+      Branch_Name: req.body.Branch_Name[i]
+    }));
+
+    const shipmentRecords = rows.map(row => ({
+      reference_number: row.Order_No,
+      order_creation_date: row.Order_Creation_Date,
+      branch_code: row.Branch_Code,
+      branch_name: row.Branch_Name,
+      barcode: row.Order_No,
+      source: "manual"
+    }));
+
+    const { error } = await supabase
+      .from("shipments")
+      .insert(shipmentRecords);
+
+    if (error) {
+      console.error("Supabase insert error:", error);
+      return res.status(500).send("Error saving manual sticker data");
+    }
+
+    res.send("Manual sticker data saved successfully.");
+  } catch (err) {
+    console.error("Manual route error:", err);
+    res.status(500).send("Server error in manual generation");
+  }
 });
 
 app.get("/track/:code", requireLogin, (req, res) => {
