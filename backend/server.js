@@ -4,9 +4,12 @@ const path = require("path");
 const express = require("express");
 const session = require("express-session");
 const fs = require("fs");
+const multer = require("multer");
+const xlsx = require("xlsx");
 const supabase = require("./supabase");
 
 const app = express();
+const upload = multer({ storage: multer.memoryStorage() });
 
 /* ===== BASIC MIDDLEWARE ===== */
 app.use(express.urlencoded({ extended: true }));
@@ -28,6 +31,69 @@ function requireLogin(req, res, next) {
     return res.redirect("/login");
   }
   next();
+}
+
+/* ===== HELPERS ===== */
+function toArray(value) {
+  if (Array.isArray(value)) return value;
+  if (value === undefined || value === null) return [];
+  return [value];
+}
+
+function buildManualRows(body) {
+  const orderNos = toArray(body.Order_No);
+  const orderDates = toArray(body.Order_Creation_Date);
+  const branchCodes = toArray(body.Branch_Code);
+  const branchNames = toArray(body.Branch_Name);
+
+  const maxLen = Math.max(
+    orderNos.length,
+    orderDates.length,
+    branchCodes.length,
+    branchNames.length
+  );
+
+  const rows = [];
+
+  for (let i = 0; i < maxLen; i++) {
+    rows.push({
+      Order_No: String(orderNos[i] || "").trim(),
+      Order_Creation_Date: String(orderDates[i] || "").trim(),
+      Branch_Code: String(branchCodes[i] || "").trim(),
+      Branch_Name: String(branchNames[i] || "").trim()
+    });
+  }
+
+  return rows;
+}
+
+function buildShipmentRecords(rows, source) {
+  return rows.map(row => ({
+    reference_number: String(row.Order_No || "").trim(),
+    order_creation_date: String(row.Order_Creation_Date || "").trim(),
+    branch_code: String(row.Branch_Code || "").trim(),
+    branch_name: String(row.Branch_Name || "").trim(),
+    barcode: String(row.Order_No || "").trim(),
+    source
+  }));
+}
+
+function buildTrackingRecords(rows) {
+  return rows.map(row => ({
+    reference_number: String(row.Order_No || "").trim(),
+    status: "Created",
+    location: "QAS-TPCS"
+  }));
+}
+
+function validateRows(rows) {
+  return rows.filter(
+    row =>
+      !String(row.Order_No || "").trim() ||
+      !String(row.Order_Creation_Date || "").trim() ||
+      !String(row.Branch_Code || "").trim() ||
+      !String(row.Branch_Name || "").trim()
+  );
 }
 
 /* ===== HOME ===== */
@@ -114,8 +180,8 @@ app.get("/dashboard", requireLogin, async (req, res) => {
 
           rows += `
             <tr>
-              <td>Shipment</td>
-              <td>${item.barcode || ""}</td>
+              <td>${item.source || "Shipment"}</td>
+              <td>${item.reference_number || item.barcode || ""}</td>
               <td>${date}</td>
             </tr>
           `;
@@ -205,11 +271,7 @@ app.get("/pod-delete/:podNo", requireLogin, (req, res) => {
     .send("POD delete is temporarily disabled on this Vercel version.");
 });
 
-const multer = require("multer");
-const xlsx = require("xlsx");
-
-const upload = multer({ storage: multer.memoryStorage() });
-
+/* ===== BATCH UPLOAD ===== */
 app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -242,49 +304,30 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
       );
     }
 
-    const shipmentRecords = rows.map(row => ({
-      reference_number: String(row.Order_No || "").trim(),
-      order_creation_date: String(row.Order_Creation_Date || "").trim(),
-      branch_code: String(row.Branch_Code || "").trim(),
-      branch_name: String(row.Branch_Name || "").trim(),
-      barcode: String(row.Order_No || "").trim(),
-      source: "batch"
-    }));
-
-    const trackingRecords = rows.map(row => ({
-    reference_number: String(row.Order_No || "").trim(),
-    status: "Created",
-    location: "QAS-TPCS",
-    }));
-
-    const { error: trackingError } = await supabase
-    .from("tracking")
-    .insert(trackingRecords);
-
-    if (trackingError) {
-    console.error("Supabase batch tracking insert error:", trackingError);
-    return res.status(500).send("Error saving batch tracking data");
-    }
-
-    const invalidRows = shipmentRecords.filter(
-      row =>
-        !row.reference_number ||
-        !row.order_creation_date ||
-        !row.branch_code ||
-        !row.branch_name
-    );
-
+    const invalidRows = validateRows(rows);
     if (invalidRows.length > 0) {
       return res.status(400).send("Some rows have missing required values.");
     }
 
-    const { error } = await supabase
+    const shipmentRecords = buildShipmentRecords(rows, "batch");
+    const trackingRecords = buildTrackingRecords(rows);
+
+    const { error: shipmentError } = await supabase
       .from("shipments")
       .insert(shipmentRecords);
 
-    if (error) {
-      console.error("Supabase batch insert error:", error);
+    if (shipmentError) {
+      console.error("Supabase batch insert error:", shipmentError);
       return res.status(500).send("Error saving batch shipment data");
+    }
+
+    const { error: trackingError } = await supabase
+      .from("tracking")
+      .insert(trackingRecords);
+
+    if (trackingError) {
+      console.error("Supabase batch tracking insert error:", trackingError);
+      return res.status(500).send("Error saving batch tracking data");
     }
 
     res.send(`Batch upload successful. ${shipmentRecords.length} rows saved.`);
@@ -294,46 +337,39 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
   }
 });
 
+/* ===== MANUAL GENERATION SAVE ===== */
 app.post("/manual", requireLogin, async (req, res) => {
   try {
-    const rows = req.body.Order_No.map((_, i) => ({
-      Order_No: req.body.Order_No[i],
-      Order_Creation_Date: req.body.Order_Creation_Date[i],
-      Branch_Code: req.body.Branch_Code[i],
-      Branch_Name: req.body.Branch_Name[i]
-    }));
+    const rows = buildManualRows(req.body);
 
-    const shipmentRecords = rows.map(row => ({
-      reference_number: row.Order_No,
-      order_creation_date: row.Order_Creation_Date,
-      branch_code: row.Branch_Code,
-      branch_name: row.Branch_Name,
-      barcode: row.Order_No,
-      source: "manual"
-    }));
-
-    const trackingRecords = rows.map(row => ({
-    reference_number: row.Order_No,
-    status: "Created",
-    location: "QAS-TPCS",
-    }));
-
-    const { error: trackingError } = await supabase
-    .from("tracking")
-   .insert(trackingRecords);
-
-    if (trackingError) {
-    console.error("Supabase tracking insert error:", trackingError);
-    return res.status(500).send("Error saving tracking data");
+    if (!rows.length) {
+      return res.status(400).send("No manual rows received.");
     }
 
-    const { error } = await supabase
+    const invalidRows = validateRows(rows);
+    if (invalidRows.length > 0) {
+      return res.status(400).send("Some manual rows have missing required values.");
+    }
+
+    const shipmentRecords = buildShipmentRecords(rows, "manual");
+    const trackingRecords = buildTrackingRecords(rows);
+
+    const { error: shipmentError } = await supabase
       .from("shipments")
       .insert(shipmentRecords);
 
-    if (error) {
-      console.error("Supabase insert error:", error);
+    if (shipmentError) {
+      console.error("Supabase insert error:", shipmentError);
       return res.status(500).send("Error saving manual sticker data");
+    }
+
+    const { error: trackingError } = await supabase
+      .from("tracking")
+      .insert(trackingRecords);
+
+    if (trackingError) {
+      console.error("Supabase tracking insert error:", trackingError);
+      return res.status(500).send("Error saving tracking data");
     }
 
     res.send("Manual sticker data saved successfully.");
@@ -343,6 +379,7 @@ app.post("/manual", requireLogin, async (req, res) => {
   }
 });
 
+/* ===== TRACK LOOKUP ===== */
 app.get("/track/:code", async (req, res) => {
   try {
     const code = req.params.code.trim();
@@ -365,6 +402,7 @@ app.get("/track/:code", async (req, res) => {
   }
 });
 
+/* ===== TEST DB ===== */
 app.get("/test-db", async (req, res) => {
   try {
     const { data, error } = await supabase
