@@ -8,6 +8,7 @@ const express = require("express");
 const session = require("express-session");
 const multer = require("multer");
 const xlsx = require("xlsx");
+const bwipjs = require("bwip-js");
 const supabase = require("./supabase");
 
 const app = express();
@@ -135,6 +136,54 @@ function htmlPage(title, body) {
   </body>
   </html>
   `;
+}
+
+async function renderStickerHtml(rows) {
+  let template = fs.readFileSync(
+    path.join(__dirname, "../templates/sticker.html"),
+    "utf8"
+  );
+
+  let stickersHtml = "";
+
+  for (const row of rows) {
+    const barcodeValue = String(row.Order_No || "").trim();
+
+    const barcodeBuffer = await bwipjs.toBuffer({
+      bcid: "code128",
+      text: barcodeValue,
+      scale: 3,
+      height: 10,
+      includetext: false
+    });
+
+    const barcodeBase64 = barcodeBuffer.toString("base64");
+
+    stickersHtml += `
+      <div class="sticker">
+        <div class="label">Capitec Reference Number</div>
+        <div class="value">${esc(row.Order_No)}</div>
+
+        <div class="label">Order Creation Date</div>
+        <div class="value">${esc(row.Order_Creation_Date)}</div>
+
+        <div class="label">Branch Code</div>
+        <div class="value">${esc(row.Branch_Code)}</div>
+
+        <div class="label">Branch Name</div>
+        <div class="value">${esc(row.Branch_Name)}</div>
+
+        <div class="barcode-label">Barcode</div>
+        <div class="barcode-area">
+          <img src="data:image/png;base64,${barcodeBase64}">
+          <div class="barcode-text">${esc(row.Order_No)}</div>
+        </div>
+      </div>
+    `;
+  }
+
+  template = template.replace("{{STICKERS}}", stickersHtml);
+  return template;
 }
 
 /* ===== HOME ===== */
@@ -536,7 +585,7 @@ app.get("/pod-delete/:podNo", requireLogin, async (req, res) => {
   }
 });
 
-/* ===== BATCH UPLOAD ===== */
+/* ===== BATCH UPLOAD + STICKER PREVIEW ===== */
 app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -595,14 +644,15 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
       return res.status(500).send("Error saving batch tracking data");
     }
 
-    res.send(`Batch upload successful. ${shipmentRecords.length} rows saved.`);
+    const stickerHtml = await renderStickerHtml(rows);
+    res.send(stickerHtml);
   } catch (err) {
     console.error("Batch route error:", err);
     res.status(500).send("Server error in batch upload");
   }
 });
 
-/* ===== MANUAL SAVE ===== */
+/* ===== MANUAL SAVE + STICKER PREVIEW ===== */
 app.post("/manual", requireLogin, async (req, res) => {
   try {
     const rows = buildManualRows(req.body);
@@ -637,7 +687,8 @@ app.post("/manual", requireLogin, async (req, res) => {
       return res.status(500).send("Error saving tracking data");
     }
 
-    res.send("Manual sticker data saved successfully.");
+    const stickerHtml = await renderStickerHtml(rows);
+    res.send(stickerHtml);
   } catch (err) {
     console.error("Manual route error:", err);
     res.status(500).send("Server error in manual generation");
