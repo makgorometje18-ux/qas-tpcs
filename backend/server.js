@@ -80,24 +80,67 @@ app.get("/logout", (req, res) => {
 });
 
 /* ===== DASHBOARD ===== */
-app.get("/dashboard", requireLogin, (req, res) => {
-  const user = req.session.user;
+app.get("/dashboard", requireLogin, async (req, res) => {
+  try {
+    const user = req.session.user;
 
-  let html = fs.readFileSync(
-    path.join(__dirname, "../frontend/dashboard.html"),
-    "utf8"
-  );
+    const { data: shipments, error: shipmentsError } = await supabase
+      .from("shipments")
+      .select("*");
 
-  html = html
-    .replace("{{USER}}", user.username)
-    .replace("{{ROLE}}", user.role)
-    .replace("{{STICKERS}}", "0")
-    .replace("{{PODS}}", "0")
-    .replace("{{ROWS}}", "");
+    const { data: pods, error: podsError } = await supabase
+      .from("pods")
+      .select("*");
 
-  html = html.replace("{{ADMIN}}", "");
+    if (shipmentsError || podsError) {
+      console.error("Dashboard query error:", shipmentsError || podsError);
+      return res.status(500).send("Error loading dashboard data");
+    }
 
-  res.send(html);
+    const stickerCount = shipments ? shipments.length : 0;
+    const podCount = pods ? pods.length : 0;
+
+    let rows = "";
+
+    if (shipments && shipments.length > 0) {
+      shipments
+        .slice()
+        .reverse()
+        .slice(0, 10)
+        .forEach(item => {
+          const date = item.created_at
+            ? new Date(item.created_at).toLocaleDateString("en-ZA")
+            : "";
+
+          rows += `
+            <tr>
+              <td>Shipment</td>
+              <td>${item.barcode || ""}</td>
+              <td>${date}</td>
+            </tr>
+          `;
+        });
+    }
+
+    let html = fs.readFileSync(
+      path.join(__dirname, "../frontend/dashboard.html"),
+      "utf8"
+    );
+
+    html = html
+      .replace("{{USER}}", user.username)
+      .replace("{{ROLE}}", user.role)
+      .replace("{{STICKERS}}", String(stickerCount))
+      .replace("{{PODS}}", String(podCount))
+      .replace("{{ROWS}}", rows);
+
+    html = html.replace("{{ADMIN}}", "");
+
+    res.send(html);
+  } catch (err) {
+    console.error("Dashboard error:", err);
+    res.status(500).send("Server error loading dashboard");
+  }
 });
 
 /* ===== SAFE PAGE ROUTES ===== */
