@@ -1,9 +1,11 @@
-require("dotenv").config();
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
 
 const path = require("path");
+const fs = require("fs");
 const express = require("express");
 const session = require("express-session");
-const fs = require("fs");
 const multer = require("multer");
 const xlsx = require("xlsx");
 const supabase = require("./supabase");
@@ -78,15 +80,15 @@ function buildShipmentRecords(rows, source) {
   }));
 }
 
-function buildTrackingRecords(rows) {
+function buildTrackingRecords(rows, status = "Created", location = "QAS-TPCS") {
   return rows.map(row => ({
     reference_number: String(row.Order_No || "").trim(),
-    status: "Created",
-    location: "QAS-TPCS"
+    status,
+    location
   }));
 }
 
-function validateRows(rows) {
+function validateStickerRows(rows) {
   return rows.filter(
     row =>
       !String(row.Order_No || "").trim() ||
@@ -94,6 +96,45 @@ function validateRows(rows) {
       !String(row.Branch_Code || "").trim() ||
       !String(row.Branch_Name || "").trim()
   );
+}
+
+function esc(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function htmlPage(title, body) {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>${esc(title)}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;padding:20px}
+      .card{max-width:1100px;margin:0 auto;background:rgba(255,255,255,0.08);padding:20px;border-radius:14px}
+      a{color:#93c5fd}
+      table{width:100%;border-collapse:collapse;background:white;color:#111;border-radius:12px;overflow:hidden}
+      th,td{padding:12px;border:1px solid #ddd;text-align:left;font-size:14px}
+      th{background:#2563eb;color:white}
+      .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+      .btn{display:inline-block;padding:10px 14px;border-radius:10px;text-decoration:none;background:#2563eb;color:white}
+      .danger{background:#dc2626}
+      h1{margin:0 0 10px}
+      p{opacity:.9}
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      ${body}
+    </div>
+  </body>
+  </html>
+  `;
 }
 
 /* ===== HOME ===== */
@@ -110,7 +151,7 @@ app.get("/login", (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/login.html"));
 });
 
-/* ===== LOGIN POST (DATABASE LOGIN) ===== */
+/* ===== LOGIN POST ===== */
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -152,7 +193,8 @@ app.get("/dashboard", requireLogin, async (req, res) => {
 
     const { data: shipments, error: shipmentsError } = await supabase
       .from("shipments")
-      .select("*");
+      .select("*")
+      .order("created_at", { ascending: false });
 
     const { data: pods, error: podsError } = await supabase
       .from("pods")
@@ -167,26 +209,19 @@ app.get("/dashboard", requireLogin, async (req, res) => {
     const podCount = pods ? pods.length : 0;
 
     let rows = "";
+    (shipments || []).slice(0, 10).forEach(item => {
+      const date = item.created_at
+        ? new Date(item.created_at).toLocaleDateString("en-ZA")
+        : "";
 
-    if (shipments && shipments.length > 0) {
-      shipments
-        .slice()
-        .reverse()
-        .slice(0, 10)
-        .forEach(item => {
-          const date = item.created_at
-            ? new Date(item.created_at).toLocaleDateString("en-ZA")
-            : "";
-
-          rows += `
-            <tr>
-              <td>${item.source || "Shipment"}</td>
-              <td>${item.reference_number || item.barcode || ""}</td>
-              <td>${date}</td>
-            </tr>
-          `;
-        });
-    }
+      rows += `
+        <tr>
+          <td>${esc(item.source || "shipment")}</td>
+          <td>${esc(item.reference_number || item.barcode || "")}</td>
+          <td>${esc(date)}</td>
+        </tr>
+      `;
+    });
 
     let html = fs.readFileSync(
       path.join(__dirname, "../frontend/dashboard.html"),
@@ -194,8 +229,8 @@ app.get("/dashboard", requireLogin, async (req, res) => {
     );
 
     html = html
-      .replace("{{USER}}", user.username)
-      .replace("{{ROLE}}", user.role)
+      .replace("{{USER}}", esc(user.username))
+      .replace("{{ROLE}}", esc(user.role))
       .replace("{{STICKERS}}", String(stickerCount))
       .replace("{{PODS}}", String(podCount))
       .replace("{{ROWS}}", rows);
@@ -209,7 +244,7 @@ app.get("/dashboard", requireLogin, async (req, res) => {
   }
 });
 
-/* ===== SAFE PAGE ROUTES ===== */
+/* ===== PAGE ROUTES ===== */
 app.get("/manual", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/manual.html"));
 });
@@ -234,41 +269,271 @@ app.get("/chat-tracking", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/chat-tracking.html"));
 });
 
-/* ===== TEMPORARY PLACEHOLDER ROUTES FOR VERCEL ===== */
-app.get("/jobs", requireLogin, (req, res) => {
-  res.send("Jobs page will be connected after storage migration.");
+/* ===== JOBS ===== */
+app.get("/jobs", requireLogin, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("shipments")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Jobs fetch error:", error);
+      return res.status(500).send("Error loading jobs");
+    }
+
+    const rows = (data || [])
+      .map(
+        item => `
+        <tr>
+          <td>${esc(item.reference_number)}</td>
+          <td>${esc(item.order_creation_date)}</td>
+          <td>${esc(item.branch_code)}</td>
+          <td>${esc(item.branch_name)}</td>
+          <td>${esc(item.source)}</td>
+          <td>${esc(item.created_at ? new Date(item.created_at).toLocaleString("en-ZA") : "")}</td>
+        </tr>
+      `
+      )
+      .join("");
+
+    res.send(
+      htmlPage(
+        "Jobs",
+        `
+        <div class="top">
+          <h1>Jobs</h1>
+          <a class="btn" href="/dashboard">Back to Dashboard</a>
+        </div>
+        <table>
+          <tr>
+            <th>Reference Number</th>
+            <th>Order Date</th>
+            <th>Branch Code</th>
+            <th>Branch Name</th>
+            <th>Source</th>
+            <th>Created At</th>
+          </tr>
+          ${rows}
+        </table>
+      `
+      )
+    );
+  } catch (err) {
+    console.error("Jobs route error:", err);
+    res.status(500).send("Server error loading jobs");
+  }
 });
 
-app.get("/manifest", requireLogin, (req, res) => {
-  res.send("Manifest page will be connected after storage migration.");
+/* ===== MANIFEST ===== */
+app.get("/manifest", requireLogin, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("shipments")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Manifest fetch error:", error);
+      return res.status(500).send("Error loading manifest");
+    }
+
+    const rows = (data || [])
+      .map(
+        item => `
+        <tr>
+          <td>${esc(item.reference_number)}</td>
+          <td>${esc(item.branch_code)}</td>
+          <td>${esc(item.branch_name)}</td>
+          <td>${esc(item.barcode)}</td>
+          <td>Economy</td>
+        </tr>
+      `
+      )
+      .join("");
+
+    res.send(
+      htmlPage(
+        "Manifest",
+        `
+        <div class="top">
+          <h1>Collection Manifest</h1>
+          <a class="btn" href="/dashboard">Back to Dashboard</a>
+        </div>
+        <p>Total Shipments: ${esc((data || []).length)}</p>
+        <table>
+          <tr>
+            <th>Reference Number</th>
+            <th>Branch Code</th>
+            <th>Branch Name</th>
+            <th>Barcode</th>
+            <th>Service</th>
+          </tr>
+          ${rows}
+        </table>
+      `
+      )
+    );
+  } catch (err) {
+    console.error("Manifest route error:", err);
+    res.status(500).send("Server error loading manifest");
+  }
 });
 
-app.post("/manifest-sign", requireLogin, (req, res) => {
-  res
-    .status(501)
-    .send("Manifest signing is temporarily disabled on this Vercel version.");
+/* ===== MANIFEST SIGN / CREATE POD ===== */
+app.post("/manifest-sign", requireLogin, async (req, res) => {
+  try {
+    const {
+      driverName,
+      dispatchName,
+      reference_numbers,
+      podNumber
+    } = req.body;
+
+    const finalPodNumber =
+      String(podNumber || "").trim() || `POD-${Date.now().toString().slice(-6)}`;
+
+    const { error: podError } = await supabase
+      .from("pods")
+      .insert([
+        {
+          pod_number: finalPodNumber,
+          driver_name: String(driverName || "").trim(),
+          dispatch_name: String(dispatchName || "").trim()
+        }
+      ]);
+
+    if (podError) {
+      console.error("POD insert error:", podError);
+      return res.status(500).send("Error saving POD");
+    }
+
+    const refs = toArray(reference_numbers)
+      .flatMap(v => String(v || "").split(","))
+      .map(v => v.trim())
+      .filter(Boolean);
+
+    if (refs.length > 0) {
+      const trackingRows = refs.map(ref => ({
+        reference_number: ref,
+        status: "Collected",
+        location: "Dispatch"
+      }));
+
+      const { error: trackingError } = await supabase
+        .from("tracking")
+        .insert(trackingRows);
+
+      if (trackingError) {
+        console.error("Manifest tracking error:", trackingError);
+      }
+    }
+
+    res.send(`POD saved successfully: ${finalPodNumber}`);
+  } catch (err) {
+    console.error("Manifest sign error:", err);
+    res.status(500).send("Server error saving POD");
+  }
 });
 
+/* ===== DOWNLOAD PLACEHOLDER ===== */
 app.get("/download/:filename", requireLogin, (req, res) => {
   res
     .status(501)
-    .send("File download is temporarily disabled on this Vercel version.");
+    .send("File download is not restored yet on this cloud version.");
 });
 
-app.get("/pod-history", requireLogin, (req, res) => {
-  res.send("POD history will be connected after storage migration.");
+/* ===== POD HISTORY ===== */
+app.get("/pod-history", requireLogin, async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("pods")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("POD history fetch error:", error);
+      return res.status(500).send("Error loading POD history");
+    }
+
+    const isAdmin = req.session.user?.role === "admin";
+
+    const rows = (data || [])
+      .map(
+        item => `
+        <tr>
+          <td>${esc(item.pod_number)}</td>
+          <td>${esc(item.driver_name)}</td>
+          <td>${esc(item.dispatch_name)}</td>
+          <td>${esc(item.created_at ? new Date(item.created_at).toLocaleString("en-ZA") : "")}</td>
+          <td>
+            ${
+              isAdmin
+                ? `<a class="btn danger" href="/pod-delete/${encodeURIComponent(item.pod_number)}" onclick="return confirm('Delete this POD?')">Delete</a>`
+                : ""
+            }
+          </td>
+        </tr>
+      `
+      )
+      .join("");
+
+    res.send(
+      htmlPage(
+        "POD History",
+        `
+        <div class="top">
+          <h1>POD History</h1>
+          <a class="btn" href="/dashboard">Back to Dashboard</a>
+        </div>
+        <table>
+          <tr>
+            <th>POD Number</th>
+            <th>Driver Name</th>
+            <th>Dispatch Name</th>
+            <th>Created At</th>
+            <th>Action</th>
+          </tr>
+          ${rows}
+        </table>
+      `
+      )
+    );
+  } catch (err) {
+    console.error("POD history route error:", err);
+    res.status(500).send("Server error loading POD history");
+  }
 });
 
+/* ===== POD DELETE ALL ===== */
 app.get("/pod-delete", requireLogin, (req, res) => {
-  res
-    .status(501)
-    .send("POD delete is temporarily disabled on this Vercel version.");
+  res.status(501).send("Delete all PODs is not enabled in this cloud version.");
 });
 
-app.get("/pod-delete/:podNo", requireLogin, (req, res) => {
-  res
-    .status(501)
-    .send("POD delete is temporarily disabled on this Vercel version.");
+/* ===== POD DELETE ONE ===== */
+app.get("/pod-delete/:podNo", requireLogin, async (req, res) => {
+  try {
+    if (!req.session.user || req.session.user.role !== "admin") {
+      return res.send("Access denied. Admin only.");
+    }
+
+    const podNo = req.params.podNo;
+
+    const { error } = await supabase
+      .from("pods")
+      .delete()
+      .eq("pod_number", podNo);
+
+    if (error) {
+      console.error("POD delete error:", error);
+      return res.status(500).send("Error deleting POD");
+    }
+
+    res.redirect("/pod-history");
+  } catch (err) {
+    console.error("POD delete route error:", err);
+    res.status(500).send("Server error deleting POD");
+  }
 });
 
 /* ===== BATCH UPLOAD ===== */
@@ -304,7 +569,7 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
       );
     }
 
-    const invalidRows = validateRows(rows);
+    const invalidRows = validateStickerRows(rows);
     if (invalidRows.length > 0) {
       return res.status(400).send("Some rows have missing required values.");
     }
@@ -337,7 +602,7 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
   }
 });
 
-/* ===== MANUAL GENERATION SAVE ===== */
+/* ===== MANUAL SAVE ===== */
 app.post("/manual", requireLogin, async (req, res) => {
   try {
     const rows = buildManualRows(req.body);
@@ -346,7 +611,7 @@ app.post("/manual", requireLogin, async (req, res) => {
       return res.status(400).send("No manual rows received.");
     }
 
-    const invalidRows = validateRows(rows);
+    const invalidRows = validateStickerRows(rows);
     if (invalidRows.length > 0) {
       return res.status(400).send("Some manual rows have missing required values.");
     }
