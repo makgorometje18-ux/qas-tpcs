@@ -6,9 +6,6 @@ const session = require("express-session");
 const fs = require("fs");
 const supabase = require("./supabase");
 
-const multer = require("multer");
-const xlsx = require("xlsx");
-
 const app = express();
 
 /* ===== BASIC MIDDLEWARE ===== */
@@ -208,78 +205,10 @@ app.get("/pod-delete/:podNo", requireLogin, (req, res) => {
     .send("POD delete is temporarily disabled on this Vercel version.");
 });
 
-const multer = require("multer");
-const xlsx = require("xlsx");
-
-const upload = multer({ storage: multer.memoryStorage() });
-
-app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).send("No file uploaded.");
-    }
-
-    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-    const sheetName = workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
-    const rows = xlsx.utils.sheet_to_json(sheet);
-
-    if (!rows.length) {
-      return res.status(400).send("Excel file contains no data.");
-    }
-
-    const requiredColumns = [
-      "Order_No",
-      "Order_Creation_Date",
-      "Branch_Code",
-      "Branch_Name"
-    ];
-
-    const missingColumns = requiredColumns.filter(
-      col => !rows[0]?.hasOwnProperty(col)
-    );
-
-    if (missingColumns.length > 0) {
-      return res.status(400).send(
-        `Missing required columns: ${missingColumns.join(", ")}`
-      );
-    }
-
-    const shipmentRecords = rows.map(row => ({
-      reference_number: String(row.Order_No || "").trim(),
-      order_creation_date: String(row.Order_Creation_Date || "").trim(),
-      branch_code: String(row.Branch_Code || "").trim(),
-      branch_name: String(row.Branch_Name || "").trim(),
-      barcode: String(row.Order_No || "").trim(),
-      source: "batch"
-    }));
-
-    const invalidRows = shipmentRecords.filter(
-      row =>
-        !row.reference_number ||
-        !row.order_creation_date ||
-        !row.branch_code ||
-        !row.branch_name
-    );
-
-    if (invalidRows.length > 0) {
-      return res.status(400).send("Some rows have missing required values.");
-    }
-
-    const { error } = await supabase
-      .from("shipments")
-      .insert(shipmentRecords);
-
-    if (error) {
-      console.error("Supabase batch insert error:", error);
-      return res.status(500).send("Error saving batch shipment data");
-    }
-
-    res.send(`Batch upload successful. ${shipmentRecords.length} rows saved.`);
-  } catch (err) {
-    console.error("Batch route error:", err);
-    res.status(500).send("Server error in batch upload");
-  }
+app.post("/batch", requireLogin, (req, res) => {
+  res
+    .status(501)
+    .send("Batch upload is temporarily disabled on this Vercel version.");
 });
 
 app.post("/manual", requireLogin, async (req, res) => {
