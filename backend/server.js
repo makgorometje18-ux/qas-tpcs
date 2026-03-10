@@ -251,6 +251,21 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
       source: "batch"
     }));
 
+    const trackingRecords = rows.map(row => ({
+    reference_number: String(row.Order_No || "").trim(),
+    status: "Created",
+    location: "QAS-TPCS",
+    }));
+
+    const { error: trackingError } = await supabase
+    .from("tracking")
+    .insert(trackingRecords);
+
+    if (trackingError) {
+    console.error("Supabase batch tracking insert error:", trackingError);
+    return res.status(500).send("Error saving batch tracking data");
+    }
+
     const invalidRows = shipmentRecords.filter(
       row =>
         !row.reference_number ||
@@ -297,6 +312,21 @@ app.post("/manual", requireLogin, async (req, res) => {
       source: "manual"
     }));
 
+    const trackingRecords = rows.map(row => ({
+    reference_number: row.Order_No,
+    status: "Created",
+    location: "QAS-TPCS",
+    }));
+
+    const { error: trackingError } = await supabase
+    .from("tracking")
+   .insert(trackingRecords);
+
+    if (trackingError) {
+    console.error("Supabase tracking insert error:", trackingError);
+    return res.status(500).send("Error saving tracking data");
+    }
+
     const { error } = await supabase
       .from("shipments")
       .insert(shipmentRecords);
@@ -313,8 +343,26 @@ app.post("/manual", requireLogin, async (req, res) => {
   }
 });
 
-app.get("/track/:code", requireLogin, (req, res) => {
-  res.json([]);
+app.get("/track/:code", async (req, res) => {
+  try {
+    const code = req.params.code.trim();
+
+    const { data, error } = await supabase
+      .from("tracking")
+      .select("*")
+      .eq("reference_number", code)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Tracking fetch error:", error);
+      return res.status(500).json([]);
+    }
+
+    res.json(data || []);
+  } catch (err) {
+    console.error("Track route error:", err);
+    res.status(500).json([]);
+  }
 });
 
 app.get("/test-db", async (req, res) => {
