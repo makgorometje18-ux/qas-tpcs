@@ -174,21 +174,34 @@ app.get("/track/:code", requireLogin, (req, res) => {
   res.json([]);
 });
 
-/* ===== EXPORT APP FOR VERCEL ===== */
-module.exports = app;
-
 const supabase = require("./supabase");
 
 app.get("/test-db", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*");
 
-  const { data, error } = await supabase
-    .from("users")
-    .select("*");
+    if (error) {
+      console.error("Supabase query error:", error);
+      return res.status(500).json({
+        source: "supabase",
+        message: error.message,
+        details: error.details || null,
+        hint: error.hint || null,
+        code: error.code || null
+      });
+    }
 
-  if (error) {
-    return res.json(error);
+    return res.json(data);
+  } catch (err) {
+    console.error("Server crash in /test-db:", err);
+    return res.status(500).json({
+      source: "server",
+      message: err.message
+    });
   }
-
-  res.json(data);
-
 });
+
+/* ===== EXPORT APP FOR VERCEL ===== */
+module.exports = app;
