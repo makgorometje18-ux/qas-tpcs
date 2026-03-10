@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const path = require("path");
 const express = require("express");
 const session = require("express-session");
@@ -174,3 +176,19 @@ app.get("/track/:code", requireLogin, (req, res) => {
 
 /* ===== EXPORT APP FOR VERCEL ===== */
 module.exports = app;
+
+const supabase = require("./supabase");
+
+app.get("/test-db", async (req, res) => {
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("*");
+
+  if (error) {
+    return res.json(error);
+  }
+
+  res.json(data);
+
+});
