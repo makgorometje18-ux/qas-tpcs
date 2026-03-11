@@ -16,8 +16,15 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
-const OUTPUT_DIR = path.join(__dirname, "../output");
-const LOGS_DIR = path.join(__dirname, "../logs");
+
+const OUTPUT_DIR = IS_PRODUCTION
+  ? "/tmp/output"
+  : path.join(__dirname, "../output");
+
+const LOGS_DIR = IS_PRODUCTION
+  ? "/tmp/logs"
+  : path.join(__dirname, "../logs");
+
 const CURRENT_MANIFEST_PATH = path.join(LOGS_DIR, "current-manifest.json");
 
 ensureDir(OUTPUT_DIR);
@@ -138,8 +145,33 @@ function buildManifestRows(rows) {
   }));
 }
 
-function saveCurrentManifest(rows) {
-  fs.writeFileSync(CURRENT_MANIFEST_PATH, JSON.stringify(rows, null, 2), "utf8");
+function saveCurrentManifest(req, rows) {
+  req.session.currentManifestRows = rows;
+
+  if (!IS_PRODUCTION) {
+    fs.writeFileSync(CURRENT_MANIFEST_PATH, JSON.stringify(rows, null, 2), "utf8");
+  }
+}
+
+function getCurrentManifest(req) {
+  if (req.session.currentManifestRows && req.session.currentManifestRows.length) {
+    return req.session.currentManifestRows;
+  }
+
+  if (fs.existsSync(CURRENT_MANIFEST_PATH)) {
+    return JSON.parse(fs.readFileSync(CURRENT_MANIFEST_PATH, "utf8"));
+  }
+
+  return [];
+}
+
+function saveSession(req) {
+  return new Promise((resolve, reject) => {
+    req.session.save(err => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
 }
 
 async function saveToSupabase(rows, source) {
@@ -242,76 +274,33 @@ async function generateStickerPdfLocal(rows, prefix) {
     await browser.close();
   }
 
-  return { pdfFilename, stickerHtml };
+  return { pdfFilename };
 }
 
-function renderSuccessPageLocal({ title, downloadUrl, manifestUrl }) {
+function renderSuccessPageLocal({ downloadUrl, manifestUrl }) {
   return `
   <!DOCTYPE html>
   <html>
   <head>
-    <title>${esc(title)}</title>
+    <title>Generating Stickers</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-      body{
-        margin:0;
-        font-family:Arial, Helvetica, sans-serif;
-        background:#f4f4f4;
-        color:#111;
-        text-align:center;
-      }
-      .wrap{
-        max-width:900px;
-        margin:0 auto;
-        padding:80px 20px;
-      }
-      h1{
-        font-size:54px;
-        margin-bottom:25px;
-      }
-      .bar-wrap{
-        max-width:1020px;
-        margin:40px auto 0;
-        background:#d9d9d9;
-        border-radius:18px;
-        height:36px;
-        overflow:hidden;
-      }
-      .bar{
-        width:100%;
-        height:100%;
-        background:#3c94d1;
-      }
-      .percent{
-        font-size:34px;
-        margin-top:55px;
-      }
-      .tick{
-        font-size:110px;
-        color:green;
-        line-height:1;
-        margin-top:35px;
-      }
-      .success{
-        font-size:42px;
-        font-weight:bold;
-        margin-top:18px;
-      }
-      .sub{
-        font-size:26px;
-        margin-top:25px;
-      }
-      iframe{display:none;}
+      body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f4f4;color:#111;text-align:center}
+      .wrap{max-width:900px;margin:0 auto;padding:80px 20px}
+      h1{font-size:54px;margin-bottom:25px}
+      .bar-wrap{max-width:1020px;margin:40px auto 0;background:#d9d9d9;border-radius:18px;height:36px;overflow:hidden}
+      .bar{width:100%;height:100%;background:#3c94d1}
+      .percent{font-size:34px;margin-top:55px}
+      .tick{font-size:110px;color:green;line-height:1;margin-top:35px}
+      .success{font-size:42px;font-weight:bold;margin-top:18px}
+      .sub{font-size:26px;margin-top:25px}
+      iframe{display:none}
     </style>
   </head>
   <body>
     <div class="wrap">
       <h1>Generating Stickers...</h1>
-
-      <div class="bar-wrap">
-        <div class="bar"></div>
-      </div>
-
+      <div class="bar-wrap"><div class="bar"></div></div>
       <div class="percent">100%</div>
       <div class="tick">✓</div>
       <div class="success">Stickers Generated Successfully</div>
@@ -333,87 +322,34 @@ function renderSuccessPageLocal({ title, downloadUrl, manifestUrl }) {
   `;
 }
 
-function renderSuccessPageVercel({ title, previewUrl, manifestUrl }) {
+function renderSuccessPageVercel({ previewUrl, manifestUrl }) {
   return `
   <!DOCTYPE html>
   <html>
   <head>
-    <title>${esc(title)}</title>
+    <title>Generating Stickers</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-      body{
-        margin:0;
-        font-family:Arial, Helvetica, sans-serif;
-        background:#f4f4f4;
-        color:#111;
-        text-align:center;
-      }
-      .wrap{
-        max-width:900px;
-        margin:0 auto;
-        padding:80px 20px;
-      }
-      h1{
-        font-size:54px;
-        margin-bottom:25px;
-      }
-      .bar-wrap{
-        max-width:1020px;
-        margin:40px auto 0;
-        background:#d9d9d9;
-        border-radius:18px;
-        height:36px;
-        overflow:hidden;
-      }
-      .bar{
-        width:100%;
-        height:100%;
-        background:#3c94d1;
-      }
-      .percent{
-        font-size:34px;
-        margin-top:55px;
-      }
-      .tick{
-        font-size:110px;
-        color:green;
-        line-height:1;
-        margin-top:35px;
-      }
-      .success{
-        font-size:42px;
-        font-weight:bold;
-        margin-top:18px;
-      }
-      .sub{
-        font-size:26px;
-        margin-top:25px;
-      }
-      .btn{
-        display:inline-block;
-        margin-top:25px;
-        padding:14px 22px;
-        border-radius:10px;
-        text-decoration:none;
-        background:#2563eb;
-        color:white;
-        font-size:18px;
-      }
+      body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f4f4;color:#111;text-align:center}
+      .wrap{max-width:900px;margin:0 auto;padding:80px 20px}
+      h1{font-size:54px;margin-bottom:25px}
+      .bar-wrap{max-width:1020px;margin:40px auto 0;background:#d9d9d9;border-radius:18px;height:36px;overflow:hidden}
+      .bar{width:100%;height:100%;background:#3c94d1}
+      .percent{font-size:34px;margin-top:55px}
+      .tick{font-size:110px;color:green;line-height:1;margin-top:35px}
+      .success{font-size:42px;font-weight:bold;margin-top:18px}
+      .sub{font-size:26px;margin-top:25px}
+      .btn{display:inline-block;margin-top:25px;padding:14px 22px;border-radius:10px;text-decoration:none;background:#2563eb;color:white;font-size:18px}
     </style>
   </head>
   <body>
     <div class="wrap">
       <h1>Generating Stickers...</h1>
-
-      <div class="bar-wrap">
-        <div class="bar"></div>
-      </div>
-
+      <div class="bar-wrap"><div class="bar"></div></div>
       <div class="percent">100%</div>
       <div class="tick">✓</div>
       <div class="success">Stickers Generated Successfully</div>
-      <div class="sub">Opening sticker print view...</div>
-
+      <div class="sub">Opening print view...</div>
       <a class="btn" href="${esc(previewUrl)}" target="_blank">Open Sticker Print View</a>
     </div>
 
@@ -451,121 +387,30 @@ function renderManifestPage(rows) {
     <title>Collection Manifest</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-      body{
-        margin:0;
-        padding:0;
-        font-family:Arial, Helvetica, sans-serif;
-        background:linear-gradient(90deg,#07153f,#05122e);
-        color:white;
-      }
-      .page{
-        padding:28px 34px 40px;
-      }
-      .topbar{
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        margin-bottom:44px;
-      }
-      .btn{
-        display:inline-block;
-        padding:16px 28px;
-        border-radius:28px;
-        text-decoration:none;
-        color:white;
-        font-size:20px;
-      }
-      .btn-back{background:#7c8597;}
-      .btn-toggle{background:#3b82f6;}
-      .header{
-        display:flex;
-        justify-content:space-between;
-        align-items:flex-start;
-        margin-top:10px;
-        margin-bottom:10px;
-      }
-      .brand{
-        font-size:38px;
-        font-weight:700;
-      }
-      .manifest-no{
-        font-size:24px;
-        font-weight:700;
-      }
-      .title{
-        text-align:center;
-        font-size:42px;
-        font-weight:800;
-        margin:8px 0 18px;
-      }
-      .info-grid{
-        display:grid;
-        grid-template-columns: 1.6fr 1fr;
-        border:1px solid #111827;
-        margin-bottom:32px;
-      }
-      .info-cell{
-        border:1px solid #111827;
-        background:#1d2b47;
-        padding:0;
-      }
-      .label{
-        font-size:18px;
-        font-weight:700;
-        padding:8px 10px 4px;
-      }
-      .value{
-        background:#ffffff;
-        color:#111;
-        margin:0 10px 10px;
-        padding:12px 14px;
-        border-radius:8px;
-        font-size:18px;
-      }
-      .value-dark{
-        background:transparent;
-        color:white;
-        margin:4px 10px 10px;
-        padding:0;
-        font-size:18px;
-      }
-      h3{
-        margin:18px 0 14px;
-        font-size:22px;
-        font-weight:800;
-      }
-      table{
-        width:100%;
-        border-collapse:collapse;
-        margin-bottom:22px;
-      }
-      th{
-        background:#3b82f6;
-        color:white;
-        border:1px solid #111827;
-        padding:14px 10px;
-        font-size:18px;
-      }
-      td{
-        background:#1d2b47;
-        color:white;
-        border:1px solid #111827;
-        padding:14px 10px;
-        font-size:17px;
-        text-align:center;
-      }
-      .terms{
-        background:white;
-        color:black;
-        padding:14px;
-        border:2px solid #111;
-        font-size:13px;
-        line-height:1.5;
-      }
+      body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:linear-gradient(90deg,#07153f,#05122e);color:white}
+      .page{padding:28px 34px 40px}
+      .topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:44px}
+      .btn{display:inline-block;padding:16px 28px;border-radius:28px;text-decoration:none;color:white;font-size:20px}
+      .btn-back{background:#7c8597}
+      .btn-toggle{background:#3b82f6}
+      .header{display:flex;justify-content:space-between;align-items:flex-start;margin-top:10px;margin-bottom:10px}
+      .brand{font-size:38px;font-weight:700}
+      .manifest-no{font-size:24px;font-weight:700}
+      .title{text-align:center;font-size:42px;font-weight:800;margin:8px 0 18px}
+      .info-grid{display:grid;grid-template-columns:1.6fr 1fr;border:1px solid #111827;margin-bottom:32px}
+      .info-cell{border:1px solid #111827;background:#1d2b47;padding:0}
+      .label{font-size:18px;font-weight:700;padding:8px 10px 4px}
+      .value{background:#ffffff;color:#111;margin:0 10px 10px;padding:12px 14px;border-radius:8px;font-size:18px}
+      .value-dark{background:transparent;color:white;margin:4px 10px 10px;padding:0;font-size:18px}
+      h3{margin:18px 0 14px;font-size:22px;font-weight:800}
+      table{width:100%;border-collapse:collapse;margin-bottom:22px}
+      th{background:#3b82f6;color:white;border:1px solid #111827;padding:14px 10px;font-size:18px}
+      td{background:#1d2b47;color:white;border:1px solid #111827;padding:14px 10px;font-size:17px;text-align:center}
+      .terms{background:white;color:black;padding:14px;border:2px solid #111;font-size:13px;line-height:1.5}
       @media print{
-        .topbar{display:none;}
-        body{background:white;color:black;}
-        .page{padding:20px;}
+        .topbar{display:none}
+        body{background:white;color:black}
+        .page{padding:20px}
       }
     </style>
   </head>
@@ -629,42 +474,13 @@ function renderPrintPreviewPage(stickerHtml) {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
       body{margin:0;background:#e5e7eb}
-      .top{
-        position:sticky;
-        top:0;
-        background:#0f172a;
-        color:white;
-        padding:12px 16px;
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        z-index:10;
-      }
-      .btn{
-        display:inline-block;
-        padding:10px 14px;
-        border-radius:10px;
-        text-decoration:none;
-        background:#2563eb;
-        color:white;
-        border:none;
-        cursor:pointer;
-        font-size:16px;
-      }
-      .paper{
-        background:white;
-        width:210mm;
-        min-height:298.4mm;
-        margin:20px auto;
-        box-shadow:0 10px 30px rgba(0,0,0,0.15);
-      }
+      .top{position:sticky;top:0;background:#0f172a;color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:10}
+      .btn{display:inline-block;padding:10px 14px;border-radius:10px;text-decoration:none;background:#2563eb;color:white;border:none;cursor:pointer;font-size:16px}
+      .paper{background:white;width:210mm;min-height:298.4mm;margin:20px auto;box-shadow:0 10px 30px rgba(0,0,0,0.15)}
       @media print{
         .top{display:none}
         body{background:white}
-        .paper{
-          margin:0;
-          box-shadow:none;
-        }
+        .paper{margin:0;box-shadow:none}
       }
     </style>
   </head>
@@ -697,15 +513,15 @@ async function handleStickerGeneration(req, res, rows, source, prefix) {
   await saveToSupabase(rows, source);
 
   const manifestRows = buildManifestRows(rows);
-  saveCurrentManifest(manifestRows);
+  saveCurrentManifest(req, manifestRows);
 
   if (IS_PRODUCTION) {
     const stickerHtml = await renderStickerHtml(rows);
     req.session.lastStickerHtml = stickerHtml;
+    await saveSession(req);
 
     return res.send(
       renderSuccessPageVercel({
-        title: "Generating Stickers",
         previewUrl: "/print-preview",
         manifestUrl: "/jobs"
       })
@@ -713,10 +529,10 @@ async function handleStickerGeneration(req, res, rows, source, prefix) {
   }
 
   const { pdfFilename } = await generateStickerPdfLocal(rows, prefix);
+  await saveSession(req);
 
   return res.send(
     renderSuccessPageLocal({
-      title: "Generating Stickers",
       downloadUrl: `/download/${pdfFilename}`,
       manifestUrl: "/jobs"
     })
@@ -869,11 +685,12 @@ app.get("/chat-tracking", requireLogin, (req, res) => {
 /* ===== JOBS / CURRENT MANIFEST ===== */
 app.get("/jobs", requireLogin, (req, res) => {
   try {
-    if (!fs.existsSync(CURRENT_MANIFEST_PATH)) {
+    const manifestRows = getCurrentManifest(req);
+
+    if (!manifestRows.length) {
       return res.send("No manifest yet. Generate stickers first.");
     }
 
-    const manifestRows = JSON.parse(fs.readFileSync(CURRENT_MANIFEST_PATH, "utf8"));
     res.send(renderManifestPage(manifestRows));
   } catch (err) {
     console.error("Jobs route error:", err);
@@ -884,11 +701,12 @@ app.get("/jobs", requireLogin, (req, res) => {
 /* ===== MANIFEST ===== */
 app.get("/manifest", requireLogin, (req, res) => {
   try {
-    if (!fs.existsSync(CURRENT_MANIFEST_PATH)) {
+    const manifestRows = getCurrentManifest(req);
+
+    if (!manifestRows.length) {
       return res.send("No manifest yet. Generate stickers first.");
     }
 
-    const manifestRows = JSON.parse(fs.readFileSync(CURRENT_MANIFEST_PATH, "utf8"));
     res.send(renderManifestPage(manifestRows));
   } catch (err) {
     console.error("Manifest route error:", err);

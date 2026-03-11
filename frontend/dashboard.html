@@ -16,20 +16,24 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
   --text:white;
   --card:rgba(255,255,255,0.15);
   --table:rgba(255,255,255,0.12);
+  --blue:#0d6efd;
+  --blue-dark:#0056b3;
 }
 
 .light{
   --bg:#f4f6f9;
   --text:#111;
-  --card:rgba(255,255,255,0.7);
+  --card:rgba(255,255,255,0.72);
   --table:white;
 }
 
 .light .logo{
-  filter:drop-shadow(0 10px 15px rgba(0,0,0,0.4));
+  filter:drop-shadow(0 10px 15px rgba(0,0,0,0.35));
 }
 
 /* ===== BODY ===== */
+*{box-sizing:border-box;}
+
 body{
   font-family:Arial, sans-serif;
   margin:0;
@@ -40,7 +44,6 @@ body{
   position:relative;
   min-height:100vh;
   overflow-x:hidden;
-  box-sizing:border-box;
 }
 
 /* ===== BACKGROUND ===== */
@@ -58,13 +61,13 @@ body::before{
 /* ===== HEADER ===== */
 h2{
   text-align:center;
-  margin:-45px 0 5px 0;
+  margin:-44px 0 6px 0;
   letter-spacing:0.5px;
 }
 
 .welcome{
   text-align:center;
-  margin-bottom:25px;
+  margin-bottom:22px;
   font-size:15px;
   opacity:0.95;
 }
@@ -74,12 +77,12 @@ h2{
   position:fixed;
   top:15px;
   right:15px;
-  background:#0d6efd;
+  background:var(--blue);
   color:white;
   padding:9px 15px;
   border-radius:22px;
   cursor:pointer;
-  z-index:2000;
+  z-index:4000;
   font-size:14px;
   box-shadow:0 6px 18px rgba(0,0,0,0.25);
   user-select:none;
@@ -94,7 +97,7 @@ h2{
   padding:9px 15px;
   border-radius:22px;
   text-decoration:none;
-  z-index:2000;
+  z-index:4000;
   box-shadow:0 6px 18px rgba(0,0,0,0.25);
 }
 
@@ -120,6 +123,74 @@ h2{
     brightness(1.1)
     contrast(1.2)
     drop-shadow(0 0 25px rgba(200,210,220,0.6));
+}
+
+/* ===== ACTIONS ===== */
+.actions{
+  position:fixed;
+  top:15px;
+  right:120px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+  z-index:3000;
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  background:var(--blue);
+  color:white;
+  border:none;
+  padding:9px 14px;
+  border-radius:22px;
+  cursor:pointer;
+  font-size:14px;
+  text-decoration:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  white-space:nowrap;
+  box-shadow:0 6px 18px rgba(0,0,0,0.20);
+  min-height:40px;
+}
+
+.btn:hover{
+  background:var(--blue-dark);
+}
+
+/* ===== DROPDOWN ===== */
+.dropdown{
+  position:relative;
+}
+
+.dropdown-content{
+  display:none;
+  position:absolute;
+  background:var(--blue);
+  min-width:220px;
+  border-radius:12px;
+  overflow:hidden;
+  top:46px;
+  left:0;
+  z-index:5000;
+  box-shadow:0 14px 30px rgba(0,0,0,0.35);
+}
+
+.dropdown-content a{
+  color:white;
+  padding:12px 14px;
+  display:block;
+  text-decoration:none;
+  font-size:14px;
+}
+
+.dropdown-content a:hover{
+  background:var(--blue-dark);
+}
+
+.dropdown.show .dropdown-content{
+  display:block;
 }
 
 /* ===== CARDS ===== */
@@ -151,7 +222,13 @@ h2{
 .card.stickers{border-left:5px solid #00c6ff;}
 .card.pods{border-left:5px solid #28a745;}
 .card.driver{border-left:5px solid #f59e0b;}
-.card.parcel{border-left:5px solid #ff3b3b;}
+.card.parcel{border-left:5px solid #ff3b3b; cursor:pointer;}
+
+.card.parcel:hover{
+  box-shadow:
+    0 15px 40px rgba(0,0,0,0.45),
+    0 0 25px rgba(255,59,59,0.28);
+}
 
 .card p{
   font-size:28px;
@@ -223,74 +300,6 @@ h2{
   z-index:1;
 }
 
-/* ===== ACTIONS ===== */
-.actions{
-  position:fixed;
-  top:15px;
-  right:120px;
-  display:flex;
-  gap:10px;
-  align-items:center;
-  z-index:1500;
-}
-
-/* ===== BUTTONS ===== */
-.btn{
-  background:#0d6efd;
-  color:white;
-  border:none;
-  padding:9px 14px;
-  border-radius:22px;
-  cursor:pointer;
-  font-size:14px;
-  text-decoration:none;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  white-space:nowrap;
-  box-shadow:0 6px 18px rgba(0,0,0,0.20);
-  box-sizing:border-box;
-}
-
-.btn:hover{
-  background:#0056b3;
-}
-
-/* ===== DROPDOWN ===== */
-.dropdown{
-  position:relative;
-}
-
-.dropdown-content{
-  display:none;
-  position:absolute;
-  background:#0d6efd;
-  min-width:210px;
-  border-radius:12px;
-  overflow:hidden;
-  top:46px;
-  left:0;
-  z-index:5000;
-  box-shadow:0 14px 30px rgba(0,0,0,0.35);
-}
-
-.dropdown-content a{
-  color:white;
-  padding:12px 14px;
-  display:block;
-  text-decoration:none;
-  font-size:14px;
-}
-
-.dropdown-content a:hover{
-  background:#0056b3;
-}
-
-.dropdown.show .dropdown-content{
-  display:block;
-}
-
 /* ===== SEARCH ===== */
 .search-box{
   text-align:center;
@@ -316,7 +325,7 @@ table{
 }
 
 th{
-  background:#0d6efd;
+  background:var(--blue);
   color:white;
   padding:12px;
 }
@@ -359,42 +368,47 @@ tr:hover td{
     position:static;
     justify-content:center;
     margin-top:10px;
-    margin-bottom:25px;
+    margin-bottom:22px;
     flex-wrap:wrap;
+  }
+
+  h2{
+    margin:-24px 0 6px 0;
   }
 }
 
-/* ===== PHONE DESIGN FIX ===== */
+/* ===== PHONE ===== */
 @media(max-width:600px){
 
   body{
     padding:10px;
-    padding-top:82px;
+    padding-top:74px;
   }
 
   .logout,
   .toggle{
-    top:10px;
+    top:8px;
     padding:8px 12px;
-    font-size:13px;
+    font-size:12px;
     border-radius:20px;
   }
 
-  .logout{ left:10px; }
-  .toggle{ right:10px; }
+  .logout{ left:8px; }
+  .toggle{ right:8px; }
 
   .logo{
-    width:92px;
-    margin:2px auto 2px auto;
+    width:88px;
+    margin:0 auto 2px auto;
   }
 
   h2{
-    margin:-8px 0 4px 0;
-    font-size:17px;
+    margin:-4px 0 4px 0;
+    font-size:16px;
+    line-height:1.15;
   }
 
   .welcome{
-    font-size:14px;
+    font-size:13px;
     margin-bottom:12px;
   }
 
@@ -402,13 +416,11 @@ tr:hover td{
     position:static;
     display:grid;
     grid-template-columns:1fr 1fr;
-    column-gap:12px;
-    row-gap:14px;
+    gap:12px;
     margin-top:8px;
     margin-bottom:18px;
-    padding:0 2px;
+    padding:0;
     width:100%;
-    box-sizing:border-box;
   }
 
   .actions > *{
@@ -422,20 +434,27 @@ tr:hover td{
 
   .btn{
     width:100%;
-    min-height:46px;
+    min-height:48px;
     font-size:13px;
-    border-radius:26px;
-    padding:10px 10px;
-    white-space:nowrap;
+    border-radius:24px;
+    padding:10px;
   }
 
+  /* chats full width on phone */
   #chatDropdown{
-    grid-column:1 / span 1;
+    grid-column:1 / span 2;
+    width:100%;
+    display:block;
+  }
+
+  #chatDropdown .btn{
+    width:100%;
+    max-width:100%;
   }
 
   .dropdown-content{
     position:absolute;
-    top:52px;
+    top:54px;
     left:0;
     width:100%;
     min-width:0;
@@ -444,7 +463,7 @@ tr:hover td{
   }
 
   .dropdown-content a{
-    padding:12px 12px;
+    padding:12px;
     font-size:13px;
   }
 
@@ -455,6 +474,19 @@ tr:hover td{
 
   .card{
     border-radius:18px;
+    padding:18px 16px;
+  }
+
+  .card h3{
+    font-size:18px;
+  }
+
+  .card p{
+    font-size:24px;
+  }
+
+  .card.driver iframe{
+    height:200px;
   }
 
   .search-box{
@@ -508,104 +540,104 @@ h3::after{
 <body>
 
 <div id="loader">
-  <img src="/logo.png">
+  <img src="/logo.png" alt="Loading">
 </div>
 
 <a href="/logout" class="logout">
-<i class="fa-solid fa-right-from-bracket"></i> Logout
+  <i class="fa-solid fa-right-from-bracket"></i> Logout
 </a>
 
 <div class="toggle" onclick="toggleMode()">🌗 Toggle</div>
 
-<img src="/logo.png" class="logo">
+<img src="/logo.png" class="logo" alt="Logo">
 
 <h2>📦 QAS-TPCS</h2>
 
 <div class="welcome">
-Logged in as <b>{{USER}}</b> ({{ROLE}})
+  Logged in as <b>{{USER}}</b> ({{ROLE}})
 </div>
 
 <div class="actions">
 
-<div class="dropdown" id="genDropdown">
-<button class="btn" type="button" onclick="toggleDropdown('genDropdown', event)">
-Generate Stickers ▼
-</button>
-<div class="dropdown-content">
-<a href="/batch">📄 Batch Generation</a>
-<a href="/manual">✍️ Manual Generat...</a>
-</div>
-</div>
+  <div class="dropdown" id="genDropdown">
+    <button class="btn" type="button" onclick="toggleDropdown('genDropdown', event)">
+      Generate Stickers ▼
+    </button>
+    <div class="dropdown-content">
+      <a href="/batch">📄 Batch Generation</a>
+      <a href="/manual">✍️ Manual Generation</a>
+    </div>
+  </div>
 
-<a href="/jobs" class="btn">Manifest</a>
-<a href="/pod-history" class="btn">POD History</a>
-<button class="btn" type="button" onclick="exportTable()">⬇ Excel</button>
+  <a href="/jobs" class="btn">Manifest</a>
+  <a href="/pod-history" class="btn">POD History</a>
+  <button class="btn" type="button" onclick="exportTable()">⬇ Excel</button>
 
-<div class="dropdown" id="chatDropdown">
-<button class="btn" type="button" onclick="toggleDropdown('chatDropdown', event)">
-💬 Chats ▼ 
-<span id="badge"
-style="
-background:red;
-color:white;
-border-radius:50%;
-padding:2px 6px;
-font-size:12px;
-margin-left:4px;
-">0</span>
-</button>
+  <div class="dropdown" id="chatDropdown">
+    <button class="btn" type="button" onclick="toggleDropdown('chatDropdown', event)">
+      💬 Chats ▼
+      <span id="badge"
+      style="
+      background:red;
+      color:white;
+      border-radius:50%;
+      padding:2px 6px;
+      font-size:12px;
+      margin-left:4px;
+      ">0</span>
+    </button>
 
-<div class="dropdown-content">
-<a href="/chat-service">🧑‍💼 Chat Service (Support)</a>
-<a href="/chat-tracking">🚚 Chat Tracking (Courier)</a>
-</div>
-</div>
+    <div class="dropdown-content">
+      <a href="/chat-service">🧑‍💼 Chat Service (Support)</a>
+      <a href="/chat-tracking">🚚 Chat Tracking (Courier)</a>
+    </div>
+  </div>
 
 </div>
 
 <div class="cards">
 
-<div class="card stickers">
-<h3>Stickers Generated</h3>
-<p>{{STICKERS}}</p>
-</div>
+  <div class="card stickers">
+    <h3>Stickers Generated</h3>
+    <p>{{STICKERS}}</p>
+  </div>
 
-<div class="card pods">
-<h3>Number of PODs</h3>
-<p>{{PODS}}</p>
-</div>
+  <div class="card pods">
+    <h3>Number of PODs</h3>
+    <p>{{PODS}}</p>
+  </div>
 
-<div class="card driver">
-<h3>🚚 Driver Tracking</h3>
-<iframe
-src="https://maps.google.com/maps?q=Johannesburg&t=&z=12&ie=UTF8&iwloc=&output=embed"
-width="100%" height="180"
-style="border-radius:12px;border:none;margin-top:10px;">
-</iframe>
-</div>
+  <div class="card driver">
+    <h3>🚚 Driver Tracking</h3>
+    <iframe
+      src="https://maps.google.com/maps?q=Johannesburg&t=&z=12&ie=UTF8&iwloc=&output=embed"
+      width="100%" height="180"
+      style="border-radius:12px;border:none;margin-top:10px;">
+    </iframe>
+  </div>
 
-<div class="card parcel" onclick="location.href='/tracking'">
-<h3>📦 Parcel Tracking</h3>
-<p>Track Shipment</p>
-</div>
+  <div class="card parcel" onclick="location.href='/tracking'">
+    <h3>📦 Parcel Tracking</h3>
+    <p>Track Shipment</p>
+  </div>
 
 </div>
 
 <div class="search-box">
-<input type="text" id="searchInput"
-placeholder="🔍 Search..."
-onkeyup="searchTable()">
+  <input type="text" id="searchInput"
+  placeholder="🔍 Search..."
+  onkeyup="searchTable()">
 </div>
 
 <h3 class="activity-title">Recent Activity</h3>
 
 <table id="activityTable">
-<tr>
-<th>Type</th>
-<th>File</th>
-<th>Date</th>
-</tr>
-{{ROWS}}
+  <tr>
+    <th>Type</th>
+    <th>File</th>
+    <th>Date</th>
+  </tr>
+  {{ROWS}}
 </table>
 
 <script>
