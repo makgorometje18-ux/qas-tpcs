@@ -26,21 +26,24 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
 }
 
 .light .logo{
-  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4));
+  filter:drop-shadow(0 10px 15px rgba(0,0,0,0.4));
 }
 
 /* ===== BODY ===== */
 body{
-  font-family:Arial;
+  font-family:Arial, sans-serif;
   margin:0;
   padding:20px;
   background:var(--bg);
   color:var(--text);
   transition:0.3s;
   position:relative;
+  min-height:100vh;
+  overflow-x:hidden;
+  box-sizing:border-box;
 }
 
-/* ===== SUBTLE GRADIENT DEPTH ===== */
+/* ===== BACKGROUND ===== */
 body::before{
   content:"";
   position:fixed;
@@ -56,12 +59,14 @@ body::before{
 h2{
   text-align:center;
   margin:-45px 0 5px 0;
+  letter-spacing:0.5px;
 }
 
 .welcome{
   text-align:center;
   margin-bottom:25px;
   font-size:15px;
+  opacity:0.95;
 }
 
 /* ===== TOP BUTTONS ===== */
@@ -69,13 +74,15 @@ h2{
   position:fixed;
   top:15px;
   right:15px;
-  background:#007bff;
+  background:#0d6efd;
   color:white;
-  padding:8px 14px;
+  padding:9px 15px;
   border-radius:22px;
   cursor:pointer;
   z-index:2000;
   font-size:14px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.25);
+  user-select:none;
 }
 
 .logout{
@@ -84,17 +91,18 @@ h2{
   left:15px;
   background:#dc3545;
   color:white;
-  padding:8px 14px;
+  padding:9px 15px;
   border-radius:22px;
   text-decoration:none;
   z-index:2000;
+  box-shadow:0 6px 18px rgba(0,0,0,0.25);
 }
 
 /* ===== LOGO ===== */
 .logo{
-  width:clamp(120px, 20vw, 200px);
+  width:clamp(120px,20vw,200px);
   display:block;
-  margin:10px auto;
+  margin:0 auto 4px auto;
   transition:0.4s;
   filter:
     invert(1)
@@ -102,10 +110,6 @@ h2{
     brightness(0.9)
     contrast(1.1)
     drop-shadow(0 10px 20px rgba(0,0,0,0.6));
-}
-
-.light .logo{
-  filter: drop-shadow(0 10px 15px rgba(0,0,0,0.4));
 }
 
 .logo:hover{
@@ -118,36 +122,10 @@ h2{
     drop-shadow(0 0 25px rgba(200,210,220,0.6));
 }
 
-.logo{
-  position:relative;
-  overflow:hidden;
-}
-
-.logo::after{
-  content:"";
-  position:absolute;
-  top:0;
-  left:-150%;
-  width:50%;
-  height:100%;
-  background:linear-gradient(
-    120deg,
-    transparent,
-    rgba(255,255,255,0.25),
-    transparent
-  );
-  transform:skewX(-25deg);
-  transition:0.6s;
-}
-
-.logo:hover::after{
-  left:150%;
-}
-
 /* ===== CARDS ===== */
 .cards{
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
   gap:20px;
   max-width:900px;
   margin:auto;
@@ -155,7 +133,7 @@ h2{
 
 .card{
   padding:18px;
-  border-radius:15px;
+  border-radius:18px;
   text-align:center;
   backdrop-filter:blur(12px);
   background:var(--card);
@@ -178,6 +156,7 @@ h2{
 .card p{
   font-size:28px;
   font-weight:bold;
+  margin-bottom:0;
 }
 
 /* ===== BACKGROUND PICTURES FOR CARDS ===== */
@@ -189,7 +168,6 @@ h2{
   overflow:hidden;
 }
 
-/* Image layer */
 .card.stickers::before,
 .card.pods::before,
 .card.driver::before,
@@ -205,7 +183,6 @@ h2{
   z-index:0;
 }
 
-/* Set each card image */
 .card.stickers::before{
   background-image:url("/stickers-sample.jpg");
 }
@@ -222,7 +199,6 @@ h2{
   background-image:url("/parcel-boxes.jpg");
 }
 
-/* Dark overlay so text stays readable */
 .card.stickers::after,
 .card.pods::after,
 .card.driver::after,
@@ -230,11 +206,10 @@ h2{
   content:"";
   position:absolute;
   inset:0;
-  background:linear-gradient(to bottom, rgba(15,23,42,0.10), rgba(15,23,42,0.35));
+  background:linear-gradient(to bottom, rgba(15,23,42,0.10), rgba(15,23,42,0.40));
   z-index:0;
 }
 
-/* Keep heading + count above image */
 .card.stickers h3,
 .card.stickers p,
 .card.pods h3,
@@ -261,18 +236,21 @@ h2{
 
 /* ===== BUTTONS ===== */
 .btn{
-  background:#007bff;
+  background:#0d6efd;
   color:white;
   border:none;
-  padding:8px 14px;
+  padding:9px 14px;
   border-radius:22px;
   cursor:pointer;
   font-size:14px;
   text-decoration:none;
   display:inline-flex;
   align-items:center;
+  justify-content:center;
   gap:6px;
   white-space:nowrap;
+  box-shadow:0 6px 18px rgba(0,0,0,0.20);
+  box-sizing:border-box;
 }
 
 .btn:hover{
@@ -287,21 +265,22 @@ h2{
 .dropdown-content{
   display:none;
   position:absolute;
-  background:#007bff;
-  min-width:200px;
-  border-radius:10px;
+  background:#0d6efd;
+  min-width:210px;
+  border-radius:12px;
   overflow:hidden;
-  top:40px;
+  top:46px;
   left:0;
-  z-index:3000;
-  box-shadow:0 10px 25px rgba(0,0,0,0.35);
+  z-index:5000;
+  box-shadow:0 14px 30px rgba(0,0,0,0.35);
 }
 
 .dropdown-content a{
   color:white;
-  padding:10px;
+  padding:12px 14px;
   display:block;
   text-decoration:none;
+  font-size:14px;
 }
 
 .dropdown-content a:hover{
@@ -321,8 +300,10 @@ h2{
 .search-box input{
   padding:10px;
   width:clamp(200px, 60%, 350px);
-  border-radius:8px;
+  border-radius:10px;
   border:none;
+  outline:none;
+  box-sizing:border-box;
 }
 
 /* ===== TABLE ===== */
@@ -335,7 +316,7 @@ table{
 }
 
 th{
-  background:#007bff;
+  background:#0d6efd;
   color:white;
   padding:12px;
 }
@@ -378,100 +359,116 @@ tr:hover td{
     position:static;
     justify-content:center;
     margin-top:10px;
-    margin-bottom:24px;
+    margin-bottom:25px;
     flex-wrap:wrap;
   }
 }
 
-/* ===== PHONE ONLY FIXES ===== */
+/* ===== PHONE DESIGN FIX ===== */
 @media(max-width:600px){
+
   body{
-    padding:12px;
-    padding-top:78px;
+    padding:10px;
+    padding-top:82px;
   }
 
   .logout,
   .toggle{
-    position:fixed;
-    top:12px;
-    z-index:4000;
-    font-size:13px;
+    top:10px;
     padding:8px 12px;
+    font-size:13px;
+    border-radius:20px;
   }
 
-  .logout{ left:12px; }
-  .toggle{ right:12px; }
+  .logout{ left:10px; }
+  .toggle{ right:10px; }
 
   .logo{
-    margin-top:18px;
-    width:110px;
+    width:92px;
+    margin:2px auto 2px auto;
   }
 
   h2{
-    margin:-18px 0 5px 0;
-    font-size:19px;
+    margin:-8px 0 4px 0;
+    font-size:17px;
   }
 
   .welcome{
-    margin-bottom:18px;
     font-size:14px;
+    margin-bottom:12px;
   }
 
   .actions{
-    position:relative;
-    top:auto;
-    right:auto;
+    position:static;
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:12px;
+    column-gap:12px;
+    row-gap:14px;
     margin-top:8px;
-    margin-bottom:28px;
-    z-index:2500;
+    margin-bottom:18px;
+    padding:0 2px;
+    width:100%;
+    box-sizing:border-box;
   }
 
   .actions > *{
     min-width:0;
-  }
-
-  .btn{
     width:100%;
-    justify-content:center;
-    font-size:13px;
-    padding:10px 12px;
   }
 
   .dropdown{
     width:100%;
   }
 
-  .dropdown-content{
-    top:calc(100% + 6px);
-    left:0;
-    right:0;
-    min-width:unset;
+  .btn{
     width:100%;
-    z-index:5000;
+    min-height:46px;
+    font-size:13px;
+    border-radius:26px;
+    padding:10px 10px;
+    white-space:nowrap;
+  }
+
+  #chatDropdown{
+    grid-column:1 / span 1;
+  }
+
+  .dropdown-content{
+    position:absolute;
+    top:52px;
+    left:0;
+    width:100%;
+    min-width:0;
+    border-radius:14px;
+    z-index:7000;
+  }
+
+  .dropdown-content a{
+    padding:12px 12px;
+    font-size:13px;
   }
 
   .cards{
     grid-template-columns:1fr;
     gap:18px;
-    position:relative;
-    z-index:1;
   }
 
   .card{
-    margin-top:0;
+    border-radius:18px;
   }
 
   .search-box{
-    margin-top:18px;
+    margin:14px 0;
   }
 
   .search-box input{
     width:100%;
     max-width:100%;
-    box-sizing:border-box;
+  }
+
+  .activity-title{
+    margin-top:8px;
+    text-align:center;
   }
 
   table{
@@ -515,7 +512,7 @@ h3::after{
 </div>
 
 <a href="/logout" class="logout">
-  <i class="fa-solid fa-right-from-bracket"></i> Logout
+<i class="fa-solid fa-right-from-bracket"></i> Logout
 </a>
 
 <div class="toggle" onclick="toggleMode()">🌗 Toggle</div>
@@ -525,98 +522,96 @@ h3::after{
 <h2>📦 QAS-TPCS</h2>
 
 <div class="welcome">
-  Logged in as <b>{{USER}}</b> ({{ROLE}})
+Logged in as <b>{{USER}}</b> ({{ROLE}})
 </div>
 
 <div class="actions">
 
-  <!-- EXISTING -->
-  <div class="dropdown" id="genDropdown">
-    <button class="btn" type="button" onclick="toggleDropdown('genDropdown', event)">
-      Generate Stickers ▼
-    </button>
-    <div class="dropdown-content">
-      <a href="/batch">📄 Batch Generation</a>
-      <a href="/manual">✍️ Manual Generat...</a>
-    </div>
-  </div>
+<div class="dropdown" id="genDropdown">
+<button class="btn" type="button" onclick="toggleDropdown('genDropdown', event)">
+Generate Stickers ▼
+</button>
+<div class="dropdown-content">
+<a href="/batch">📄 Batch Generation</a>
+<a href="/manual">✍️ Manual Generat...</a>
+</div>
+</div>
 
-  <a href="/jobs" class="btn">Manifest</a>
-  <a href="/pod-history" class="btn">POD History</a>
-  <button class="btn" type="button" onclick="exportTable()">⬇ Excel</button>
+<a href="/jobs" class="btn">Manifest</a>
+<a href="/pod-history" class="btn">POD History</a>
+<button class="btn" type="button" onclick="exportTable()">⬇ Excel</button>
 
-  <!-- ✅ NEW CHATS BUTTON -->
-  <div class="dropdown" id="chatDropdown">
-    <button class="btn" type="button" onclick="toggleDropdown('chatDropdown', event)">
-      💬 Chats ▼
-      <span id="badge"
-      style="
-      background:red;
-      color:white;
-      border-radius:50%;
-      padding:2px 6px;
-      font-size:12px;
-      margin-left:4px;
-      ">0</span>
-    </button>
+<div class="dropdown" id="chatDropdown">
+<button class="btn" type="button" onclick="toggleDropdown('chatDropdown', event)">
+💬 Chats ▼ 
+<span id="badge"
+style="
+background:red;
+color:white;
+border-radius:50%;
+padding:2px 6px;
+font-size:12px;
+margin-left:4px;
+">0</span>
+</button>
 
-    <div class="dropdown-content">
-      <a href="/chat-service">🧑‍💼 Chat Service (Support)</a>
-      <a href="/chat-tracking">🚚 Chat Tracking (Courier)</a>
-    </div>
-  </div>
+<div class="dropdown-content">
+<a href="/chat-service">🧑‍💼 Chat Service (Support)</a>
+<a href="/chat-tracking">🚚 Chat Tracking (Courier)</a>
+</div>
+</div>
 
 </div>
 
 <div class="cards">
 
-  <div class="card stickers">
-    <h3>Stickers Generated</h3>
-    <p>{{STICKERS}}</p>
-  </div>
+<div class="card stickers">
+<h3>Stickers Generated</h3>
+<p>{{STICKERS}}</p>
+</div>
 
-  <div class="card pods">
-    <h3>Number of PODs</h3>
-    <p>{{PODS}}</p>
-  </div>
+<div class="card pods">
+<h3>Number of PODs</h3>
+<p>{{PODS}}</p>
+</div>
 
-  <div class="card driver">
-    <h3>🚚 Driver Tracking</h3>
-    <iframe
-      src="https://maps.google.com/maps?q=Johannesburg&t=&z=12&ie=UTF8&iwloc=&output=embed"
-      width="100%" height="180"
-      style="border-radius:12px;border:none;margin-top:10px;">
-    </iframe>
-  </div>
+<div class="card driver">
+<h3>🚚 Driver Tracking</h3>
+<iframe
+src="https://maps.google.com/maps?q=Johannesburg&t=&z=12&ie=UTF8&iwloc=&output=embed"
+width="100%" height="180"
+style="border-radius:12px;border:none;margin-top:10px;">
+</iframe>
+</div>
 
-  <div class="card parcel" onclick="location.href='/tracking'">
-    <h3>📦 Parcel Tracking</h3>
-    <p>Track Shipment</p>
-  </div>
+<div class="card parcel" onclick="location.href='/tracking'">
+<h3>📦 Parcel Tracking</h3>
+<p>Track Shipment</p>
+</div>
 
 </div>
 
 <div class="search-box">
-  <input type="text" id="searchInput"
-  placeholder="🔍 Search..."
-  onkeyup="searchTable()">
+<input type="text" id="searchInput"
+placeholder="🔍 Search..."
+onkeyup="searchTable()">
 </div>
 
 <h3 class="activity-title">Recent Activity</h3>
 
 <table id="activityTable">
-  <tr>
-    <th>Type</th>
-    <th>File</th>
-    <th>Date</th>
-  </tr>
-  {{ROWS}}
+<tr>
+<th>Type</th>
+<th>File</th>
+<th>Date</th>
+</tr>
+{{ROWS}}
 </table>
 
 <script>
 window.onload = function(){
   document.getElementById("loader").style.display = "none";
-}
+};
 
 function toggleMode(){
   document.body.classList.toggle("light");
@@ -627,7 +622,7 @@ function toggleDropdown(id, event){
     event.stopPropagation();
   }
 
-  document.querySelectorAll(".dropdown").forEach(drop => {
+  document.querySelectorAll(".dropdown").forEach(function(drop){
     if(drop.id !== id){
       drop.classList.remove("show");
     }
@@ -638,16 +633,20 @@ function toggleDropdown(id, event){
 
 window.addEventListener("click", function(e){
   if(!e.target.closest(".dropdown")){
-    document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
+    document.querySelectorAll(".dropdown").forEach(function(d){
+      d.classList.remove("show");
+    });
   }
 });
 
 function searchTable(){
   const input = document.getElementById("searchInput").value.toLowerCase();
   const rows = document.querySelectorAll("#activityTable tr");
+
   rows.forEach((row, i) => {
     if(i === 0) return;
-    row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
+    row.style.display =
+      row.innerText.toLowerCase().includes(input) ? "" : "none";
   });
 }
 

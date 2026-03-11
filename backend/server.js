@@ -16,15 +16,8 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
-
-const OUTPUT_DIR = IS_PRODUCTION
-  ? "/tmp"
-  : path.join(__dirname, "../output");
-
-const LOGS_DIR = IS_PRODUCTION
-  ? "/tmp"
-  : path.join(__dirname, "../logs");
-
+const OUTPUT_DIR = path.join(__dirname, "../output");
+const LOGS_DIR = path.join(__dirname, "../logs");
 const CURRENT_MANIFEST_PATH = path.join(LOGS_DIR, "current-manifest.json");
 
 ensureDir(OUTPUT_DIR);
@@ -218,21 +211,17 @@ async function renderStickerHtml(rows) {
   return template;
 }
 
-async function generateStickerPdf(rows, prefix) {
+async function generateStickerPdfLocal(rows, prefix) {
   const stickerHtml = await renderStickerHtml(rows);
 
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const pdfFilename = `${prefix}_${timestamp}.pdf`;
   const pdfPath = path.join(OUTPUT_DIR, pdfFilename);
 
-const browser = await puppeteer.launch({
-  headless: true,
-  args: [
-    "--no-sandbox",
-    "--disable-setuid-sandbox",
-    "--disable-dev-shm-usage"
-  ]
-});
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+  });
 
   try {
     const page = await browser.newPage();
@@ -253,10 +242,10 @@ const browser = await puppeteer.launch({
     await browser.close();
   }
 
-  return { pdfFilename, pdfPath, stickerHtml };
+  return { pdfFilename, stickerHtml };
 }
 
-function renderSuccessPage({ title, downloadUrl, manifestUrl }) {
+function renderSuccessPageLocal({ title, downloadUrl, manifestUrl }) {
   return `
   <!DOCTYPE html>
   <html>
@@ -312,19 +301,6 @@ function renderSuccessPage({ title, downloadUrl, manifestUrl }) {
         font-size:26px;
         margin-top:25px;
       }
-      .links{
-        margin-top:35px;
-      }
-      .btn{
-        display:inline-block;
-        margin:8px;
-        padding:12px 18px;
-        border-radius:10px;
-        background:#2563eb;
-        color:white;
-        text-decoration:none;
-        font-size:18px;
-      }
       iframe{display:none;}
     </style>
   </head>
@@ -340,11 +316,6 @@ function renderSuccessPage({ title, downloadUrl, manifestUrl }) {
       <div class="tick">✓</div>
       <div class="success">Stickers Generated Successfully</div>
       <div class="sub">Opening manifest...</div>
-
-      <div class="links">
-        <a class="btn" href="${esc(downloadUrl)}" download>Download PDF</a>
-        <a class="btn" href="${esc(manifestUrl)}">Open Manifest</a>
-      </div>
     </div>
 
     <iframe id="downloadFrame"></iframe>
@@ -352,6 +323,103 @@ function renderSuccessPage({ title, downloadUrl, manifestUrl }) {
     <script>
       window.onload = function () {
         document.getElementById("downloadFrame").src = ${JSON.stringify(downloadUrl)};
+        setTimeout(function () {
+          window.location.href = ${JSON.stringify(manifestUrl)};
+        }, 1800);
+      };
+    </script>
+  </body>
+  </html>
+  `;
+}
+
+function renderSuccessPageVercel({ title, previewUrl, manifestUrl }) {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>${esc(title)}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body{
+        margin:0;
+        font-family:Arial, Helvetica, sans-serif;
+        background:#f4f4f4;
+        color:#111;
+        text-align:center;
+      }
+      .wrap{
+        max-width:900px;
+        margin:0 auto;
+        padding:80px 20px;
+      }
+      h1{
+        font-size:54px;
+        margin-bottom:25px;
+      }
+      .bar-wrap{
+        max-width:1020px;
+        margin:40px auto 0;
+        background:#d9d9d9;
+        border-radius:18px;
+        height:36px;
+        overflow:hidden;
+      }
+      .bar{
+        width:100%;
+        height:100%;
+        background:#3c94d1;
+      }
+      .percent{
+        font-size:34px;
+        margin-top:55px;
+      }
+      .tick{
+        font-size:110px;
+        color:green;
+        line-height:1;
+        margin-top:35px;
+      }
+      .success{
+        font-size:42px;
+        font-weight:bold;
+        margin-top:18px;
+      }
+      .sub{
+        font-size:26px;
+        margin-top:25px;
+      }
+      .btn{
+        display:inline-block;
+        margin-top:25px;
+        padding:14px 22px;
+        border-radius:10px;
+        text-decoration:none;
+        background:#2563eb;
+        color:white;
+        font-size:18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Generating Stickers...</h1>
+
+      <div class="bar-wrap">
+        <div class="bar"></div>
+      </div>
+
+      <div class="percent">100%</div>
+      <div class="tick">✓</div>
+      <div class="success">Stickers Generated Successfully</div>
+      <div class="sub">Opening sticker print view...</div>
+
+      <a class="btn" href="${esc(previewUrl)}" target="_blank">Open Sticker Print View</a>
+    </div>
+
+    <script>
+      window.onload = function () {
+        window.open(${JSON.stringify(previewUrl)}, "_blank");
         setTimeout(function () {
           window.location.href = ${JSON.stringify(manifestUrl)};
         }, 1800);
@@ -552,7 +620,75 @@ function renderManifestPage(rows) {
   `;
 }
 
-async function handleStickerGeneration(res, rows, source, prefix) {
+function renderPrintPreviewPage(stickerHtml) {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>Sticker Print Preview</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body{margin:0;background:#e5e7eb}
+      .top{
+        position:sticky;
+        top:0;
+        background:#0f172a;
+        color:white;
+        padding:12px 16px;
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        z-index:10;
+      }
+      .btn{
+        display:inline-block;
+        padding:10px 14px;
+        border-radius:10px;
+        text-decoration:none;
+        background:#2563eb;
+        color:white;
+        border:none;
+        cursor:pointer;
+        font-size:16px;
+      }
+      .paper{
+        background:white;
+        width:210mm;
+        min-height:298.4mm;
+        margin:20px auto;
+        box-shadow:0 10px 30px rgba(0,0,0,0.15);
+      }
+      @media print{
+        .top{display:none}
+        body{background:white}
+        .paper{
+          margin:0;
+          box-shadow:none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <div>Sticker Print Preview</div>
+      <button class="btn" onclick="window.print()">Print</button>
+    </div>
+    <div class="paper">
+      ${stickerHtml}
+    </div>
+    <script>
+      window.onload = function () {
+        setTimeout(function () {
+          window.print();
+        }, 400);
+      };
+    </script>
+  </body>
+  </html>
+  `;
+}
+
+async function handleStickerGeneration(req, res, rows, source, prefix) {
   const invalidRows = validateStickerRows(rows);
   if (invalidRows.length > 0) {
     return res.status(400).send("Some rows have missing required values.");
@@ -563,16 +699,40 @@ async function handleStickerGeneration(res, rows, source, prefix) {
   const manifestRows = buildManifestRows(rows);
   saveCurrentManifest(manifestRows);
 
-  const { pdfFilename } = await generateStickerPdf(rows, prefix);
+  if (IS_PRODUCTION) {
+    const stickerHtml = await renderStickerHtml(rows);
+    req.session.lastStickerHtml = stickerHtml;
+
+    return res.send(
+      renderSuccessPageVercel({
+        title: "Generating Stickers",
+        previewUrl: "/print-preview",
+        manifestUrl: "/jobs"
+      })
+    );
+  }
+
+  const { pdfFilename } = await generateStickerPdfLocal(rows, prefix);
 
   return res.send(
-    renderSuccessPage({
+    renderSuccessPageLocal({
       title: "Generating Stickers",
       downloadUrl: `/download/${pdfFilename}`,
       manifestUrl: "/jobs"
     })
   );
 }
+
+/* ===== PRINT PREVIEW ===== */
+app.get("/print-preview", requireLogin, (req, res) => {
+  const stickerHtml = req.session.lastStickerHtml;
+
+  if (!stickerHtml) {
+    return res.send("No sticker preview available. Generate stickers first.");
+  }
+
+  res.send(renderPrintPreviewPage(stickerHtml));
+});
 
 /* ===== HOME ===== */
 app.get("/", (req, res) => {
@@ -917,7 +1077,7 @@ app.get("/pod-delete/:podNo", requireLogin, async (req, res) => {
   }
 });
 
-/* ===== BATCH: SAVE + PDF + AUTO DOWNLOAD + MANIFEST ===== */
+/* ===== BATCH ===== */
 app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -957,14 +1117,14 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
       Branch_Name: String(row.Branch_Name || "").trim()
     }));
 
-    return await handleStickerGeneration(res, rows, "batch", "QAS-TPCS_Batch");
+    return await handleStickerGeneration(req, res, rows, "batch", "QAS-TPCS_Batch");
   } catch (err) {
     console.error("Batch route error:", err);
     res.status(500).send("Server error in batch upload");
   }
 });
 
-/* ===== MANUAL: SAVE + PDF + AUTO DOWNLOAD + MANIFEST ===== */
+/* ===== MANUAL ===== */
 app.post("/manual", requireLogin, async (req, res) => {
   try {
     const rows = buildManualRows(req.body);
@@ -973,7 +1133,7 @@ app.post("/manual", requireLogin, async (req, res) => {
       return res.status(400).send("No manual rows received.");
     }
 
-    return await handleStickerGeneration(res, rows, "manual", "QAS-TPCS_Manual");
+    return await handleStickerGeneration(req, res, rows, "manual", "QAS-TPCS_Manual");
   } catch (err) {
     console.error("Manual route error:", err);
     res.status(500).send("Server error in manual generation");
