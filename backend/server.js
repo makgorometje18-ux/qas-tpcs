@@ -15,8 +15,16 @@ const supabase = require("./supabase");
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 
-const OUTPUT_DIR = path.join(__dirname, "../output");
-const LOGS_DIR = path.join(__dirname, "../logs");
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+const OUTPUT_DIR = IS_PRODUCTION
+  ? "/tmp"
+  : path.join(__dirname, "../output");
+
+const LOGS_DIR = IS_PRODUCTION
+  ? "/tmp"
+  : path.join(__dirname, "../logs");
+
 const CURRENT_MANIFEST_PATH = path.join(LOGS_DIR, "current-manifest.json");
 
 ensureDir(OUTPUT_DIR);
@@ -217,10 +225,14 @@ async function generateStickerPdf(rows, prefix) {
   const pdfFilename = `${prefix}_${timestamp}.pdf`;
   const pdfPath = path.join(OUTPUT_DIR, pdfFilename);
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"]
-  });
+const browser = await puppeteer.launch({
+  headless: true,
+  args: [
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage"
+  ]
+});
 
   try {
     const page = await browser.newPage();

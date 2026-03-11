@@ -74,7 +74,7 @@ h2{
   padding:8px 14px;
   border-radius:22px;
   cursor:pointer;
-  z-index:1000;
+  z-index:2000;
   font-size:14px;
 }
 
@@ -87,6 +87,7 @@ h2{
   padding:8px 14px;
   border-radius:22px;
   text-decoration:none;
+  z-index:2000;
 }
 
 /* ===== LOGO ===== */
@@ -251,11 +252,11 @@ h2{
 .actions{
   position:fixed;
   top:15px;
-  right:120px; 
+  right:120px;
   display:flex;
   gap:10px;
   align-items:center;
-  z-index:999;
+  z-index:1500;
 }
 
 /* ===== BUTTONS ===== */
@@ -279,7 +280,9 @@ h2{
 }
 
 /* ===== DROPDOWN ===== */
-.dropdown{position:relative;}
+.dropdown{
+  position:relative;
+}
 
 .dropdown-content{
   display:none;
@@ -289,6 +292,9 @@ h2{
   border-radius:10px;
   overflow:hidden;
   top:40px;
+  left:0;
+  z-index:3000;
+  box-shadow:0 10px 25px rgba(0,0,0,0.35);
 }
 
 .dropdown-content a{
@@ -298,9 +304,13 @@ h2{
   text-decoration:none;
 }
 
-.dropdown-content a:hover{background:#0056b3;}
+.dropdown-content a:hover{
+  background:#0056b3;
+}
 
-.dropdown.show .dropdown-content{display:block;}
+.dropdown.show .dropdown-content{
+  display:block;
+}
 
 /* ===== SEARCH ===== */
 .search-box{
@@ -362,19 +372,113 @@ tr:hover td{
   to{transform:rotate(360deg);}
 }
 
-/* ===== MOBILE ===== */
+/* ===== TABLET ===== */
 @media(max-width:900px){
   .actions{
     position:static;
     justify-content:center;
     margin-top:10px;
+    margin-bottom:24px;
     flex-wrap:wrap;
   }
 }
 
+/* ===== PHONE ONLY FIXES ===== */
 @media(max-width:600px){
-  body{padding:12px;}
-  .cards{grid-template-columns:1fr;}
+  body{
+    padding:12px;
+    padding-top:78px;
+  }
+
+  .logout,
+  .toggle{
+    position:fixed;
+    top:12px;
+    z-index:4000;
+    font-size:13px;
+    padding:8px 12px;
+  }
+
+  .logout{ left:12px; }
+  .toggle{ right:12px; }
+
+  .logo{
+    margin-top:18px;
+    width:110px;
+  }
+
+  h2{
+    margin:-18px 0 5px 0;
+    font-size:19px;
+  }
+
+  .welcome{
+    margin-bottom:18px;
+    font-size:14px;
+  }
+
+  .actions{
+    position:relative;
+    top:auto;
+    right:auto;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+    margin-top:8px;
+    margin-bottom:28px;
+    z-index:2500;
+  }
+
+  .actions > *{
+    min-width:0;
+  }
+
+  .btn{
+    width:100%;
+    justify-content:center;
+    font-size:13px;
+    padding:10px 12px;
+  }
+
+  .dropdown{
+    width:100%;
+  }
+
+  .dropdown-content{
+    top:calc(100% + 6px);
+    left:0;
+    right:0;
+    min-width:unset;
+    width:100%;
+    z-index:5000;
+  }
+
+  .cards{
+    grid-template-columns:1fr;
+    gap:18px;
+    position:relative;
+    z-index:1;
+  }
+
+  .card{
+    margin-top:0;
+  }
+
+  .search-box{
+    margin-top:18px;
+  }
+
+  .search-box input{
+    width:100%;
+    max-width:100%;
+    box-sizing:border-box;
+  }
+
+  table{
+    display:block;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
 }
 
 /* ===== GREEN LIVE DOTS ===== */
@@ -411,7 +515,7 @@ h3::after{
 </div>
 
 <a href="/logout" class="logout">
-<i class="fa-solid fa-right-from-bracket"></i> Logout
+  <i class="fa-solid fa-right-from-bracket"></i> Logout
 </a>
 
 <div class="toggle" onclick="toggleMode()">🌗 Toggle</div>
@@ -421,143 +525,143 @@ h3::after{
 <h2>📦 QAS-TPCS</h2>
 
 <div class="welcome">
-Logged in as <b>{{USER}}</b> ({{ROLE}})
+  Logged in as <b>{{USER}}</b> ({{ROLE}})
 </div>
 
 <div class="actions">
 
-<!-- EXISTING -->
-<div class="dropdown" id="genDropdown">
-<button class="btn" onclick="toggleDropdown('genDropdown')">
-Generate Stickers ▼
-</button>
-<div class="dropdown-content">
-<a href="/batch">📄 Batch Generation</a>
-<a href="/manual">✍️ Manual Generat...</a>
-</div>
-</div>
+  <!-- EXISTING -->
+  <div class="dropdown" id="genDropdown">
+    <button class="btn" type="button" onclick="toggleDropdown('genDropdown', event)">
+      Generate Stickers ▼
+    </button>
+    <div class="dropdown-content">
+      <a href="/batch">📄 Batch Generation</a>
+      <a href="/manual">✍️ Manual Generat...</a>
+    </div>
+  </div>
 
-<a href="/jobs" class="btn">Manifest</a>
-<a href="/pod-history" class="btn">POD History</a>
-<button class="btn" onclick="exportTable()">⬇ Excel</button>
+  <a href="/jobs" class="btn">Manifest</a>
+  <a href="/pod-history" class="btn">POD History</a>
+  <button class="btn" type="button" onclick="exportTable()">⬇ Excel</button>
 
-<!-- ✅ NEW CHATS BUTTON -->
-<div class="dropdown" id="chatDropdown">
-<button class="btn" onclick="toggleDropdown('chatDropdown')">
-💬 Chats ▼ 
-<span id="badge"
-style="
-background:red;
-color:white;
-border-radius:50%;
-padding:2px 6px;
-font-size:12px;
-margin-left:4px;
-">0</span>
-</button>
+  <!-- ✅ NEW CHATS BUTTON -->
+  <div class="dropdown" id="chatDropdown">
+    <button class="btn" type="button" onclick="toggleDropdown('chatDropdown', event)">
+      💬 Chats ▼
+      <span id="badge"
+      style="
+      background:red;
+      color:white;
+      border-radius:50%;
+      padding:2px 6px;
+      font-size:12px;
+      margin-left:4px;
+      ">0</span>
+    </button>
 
-<div class="dropdown-content">
-<a href="/chat-service">🧑‍💼 Chat Service (Support)</a>
-<a href="/chat-tracking">🚚 Chat Tracking (Courier)</a>
-</div>
-</div>
+    <div class="dropdown-content">
+      <a href="/chat-service">🧑‍💼 Chat Service (Support)</a>
+      <a href="/chat-tracking">🚚 Chat Tracking (Courier)</a>
+    </div>
+  </div>
 
 </div>
 
 <div class="cards">
 
-<div class="card stickers">
-<h3>Stickers Generated</h3>
-<p>{{STICKERS}}</p>
-</div>
+  <div class="card stickers">
+    <h3>Stickers Generated</h3>
+    <p>{{STICKERS}}</p>
+  </div>
 
-<div class="card pods">
-<h3>Number of PODs</h3>
-<p>{{PODS}}</p>
-</div>
+  <div class="card pods">
+    <h3>Number of PODs</h3>
+    <p>{{PODS}}</p>
+  </div>
 
-<div class="card driver">
-<h3>🚚 Driver Tracking</h3>
-<iframe
-src="https://maps.google.com/maps?q=Johannesburg&t=&z=12&ie=UTF8&iwloc=&output=embed"
-width="100%" height="180"
-style="border-radius:12px;border:none;margin-top:10px;">
-</iframe>
-</div>
+  <div class="card driver">
+    <h3>🚚 Driver Tracking</h3>
+    <iframe
+      src="https://maps.google.com/maps?q=Johannesburg&t=&z=12&ie=UTF8&iwloc=&output=embed"
+      width="100%" height="180"
+      style="border-radius:12px;border:none;margin-top:10px;">
+    </iframe>
+  </div>
 
-<div class="card parcel" onclick="location.href='/tracking'">
-<h3>📦 Parcel Tracking</h3>
-<p>Track Shipment</p>
-</div>
+  <div class="card parcel" onclick="location.href='/tracking'">
+    <h3>📦 Parcel Tracking</h3>
+    <p>Track Shipment</p>
+  </div>
 
 </div>
 
 <div class="search-box">
-<input type="text" id="searchInput"
-placeholder="🔍 Search..."
-onkeyup="searchTable()">
+  <input type="text" id="searchInput"
+  placeholder="🔍 Search..."
+  onkeyup="searchTable()">
 </div>
 
 <h3 class="activity-title">Recent Activity</h3>
 
 <table id="activityTable">
-<tr>
-<th>Type</th>
-<th>File</th>
-<th>Date</th>
-</tr>
-{{ROWS}}
+  <tr>
+    <th>Type</th>
+    <th>File</th>
+    <th>Date</th>
+  </tr>
+  {{ROWS}}
 </table>
 
 <script>
-
-window.onload=function(){
-  document.getElementById("loader").style.display="none";
+window.onload = function(){
+  document.getElementById("loader").style.display = "none";
 }
 
 function toggleMode(){
   document.body.classList.toggle("light");
 }
 
-/* UPDATED FOR MULTIPLE DROPDOWNS */
-function toggleDropdown(id){
+function toggleDropdown(id, event){
+  if(event){
+    event.stopPropagation();
+  }
+
+  document.querySelectorAll(".dropdown").forEach(drop => {
+    if(drop.id !== id){
+      drop.classList.remove("show");
+    }
+  });
+
   document.getElementById(id).classList.toggle("show");
 }
 
-window.onclick=function(e){
-  if(!e.target.matches('.btn')){
-    document.querySelectorAll(".dropdown")
-      .forEach(d=>d.classList.remove("show"));
+window.addEventListener("click", function(e){
+  if(!e.target.closest(".dropdown")){
+    document.querySelectorAll(".dropdown").forEach(d => d.classList.remove("show"));
   }
-}
+});
 
 function searchTable(){
-  const input=document.getElementById("searchInput").value.toLowerCase();
-  const rows=document.querySelectorAll("#activityTable tr");
-  rows.forEach((row,i)=>{
-    if(i===0) return;
-    row.style.display=
-      row.innerText.toLowerCase().includes(input)?"":"none";
+  const input = document.getElementById("searchInput").value.toLowerCase();
+  const rows = document.querySelectorAll("#activityTable tr");
+  rows.forEach((row, i) => {
+    if(i === 0) return;
+    row.style.display = row.innerText.toLowerCase().includes(input) ? "" : "none";
   });
 }
 
 function exportTable(){
-  let table=document.getElementById("activityTable").outerHTML;
-  let data='application/vnd.ms-excel,'+encodeURIComponent(table);
-  let a=document.createElement('a');
-  a.href='data:'+data;
-  a.download='dashboard.xls';
+  let table = document.getElementById("activityTable").outerHTML;
+  let data = 'application/vnd.ms-excel,' + encodeURIComponent(table);
+  let a = document.createElement('a');
+  a.href = 'data:' + data;
+  a.download = 'dashboard.xls';
   a.click();
 }
 
-</script>
-
-
-<script>
 let count = 0;
 document.getElementById("badge").innerText = count;
-</script>
-
 </script>
 
 </body>
