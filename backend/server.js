@@ -9,10 +9,18 @@ const session = require("express-session");
 const multer = require("multer");
 const xlsx = require("xlsx");
 const bwipjs = require("bwip-js");
+const puppeteer = require("puppeteer");
 const supabase = require("./supabase");
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
+
+const OUTPUT_DIR = path.join(__dirname, "../output");
+const LOGS_DIR = path.join(__dirname, "../logs");
+const CURRENT_MANIFEST_PATH = path.join(LOGS_DIR, "current-manifest.json");
+
+ensureDir(OUTPUT_DIR);
+ensureDir(LOGS_DIR);
 
 /* ===== BASIC MIDDLEWARE ===== */
 app.use(express.urlencoded({ extended: true }));
@@ -37,10 +45,25 @@ function requireLogin(req, res, next) {
 }
 
 /* ===== HELPERS ===== */
+function ensureDir(dir) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
 function toArray(value) {
   if (Array.isArray(value)) return value;
-  if (value === undefined || value === null) return [];
+  if (value === undefined || value === null || value === "") return [];
   return [value];
+}
+
+function esc(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
 
 function buildManualRows(body) {
@@ -67,7 +90,23 @@ function buildManualRows(body) {
     });
   }
 
-  return rows;
+  return rows.filter(
+    row =>
+      row.Order_No ||
+      row.Order_Creation_Date ||
+      row.Branch_Code ||
+      row.Branch_Name
+  );
+}
+
+function validateStickerRows(rows) {
+  return rows.filter(
+    row =>
+      !String(row.Order_No || "").trim() ||
+      !String(row.Order_Creation_Date || "").trim() ||
+      !String(row.Branch_Code || "").trim() ||
+      !String(row.Branch_Name || "").trim()
+  );
 }
 
 function buildShipmentRecords(rows, source) {
@@ -89,53 +128,38 @@ function buildTrackingRecords(rows, status = "Created", location = "QAS-TPCS") {
   }));
 }
 
-function validateStickerRows(rows) {
-  return rows.filter(
-    row =>
-      !String(row.Order_No || "").trim() ||
-      !String(row.Order_Creation_Date || "").trim() ||
-      !String(row.Branch_Code || "").trim() ||
-      !String(row.Branch_Name || "").trim()
-  );
+function buildManifestRows(rows) {
+  return rows.map(row => ({
+    barcode: String(row.Order_No || "").trim(),
+    Branch_Code: String(row.Branch_Code || "").trim(),
+    branch: String(row.Branch_Name || "").trim(),
+    parcels: 1
+  }));
 }
 
-function esc(value) {
-  return String(value ?? "")
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
+function saveCurrentManifest(rows) {
+  fs.writeFileSync(CURRENT_MANIFEST_PATH, JSON.stringify(rows, null, 2), "utf8");
 }
 
-function htmlPage(title, body) {
-  return `
-  <!DOCTYPE html>
-  <html>
-  <head>
-    <title>${esc(title)}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <style>
-      body{font-family:Arial,sans-serif;background:#0f172a;color:white;margin:0;padding:20px}
-      .card{max-width:1100px;margin:0 auto;background:rgba(255,255,255,0.08);padding:20px;border-radius:14px}
-      a{color:#93c5fd}
-      table{width:100%;border-collapse:collapse;background:white;color:#111;border-radius:12px;overflow:hidden}
-      th,td{padding:12px;border:1px solid #ddd;text-align:left;font-size:14px}
-      th{background:#2563eb;color:white}
-      .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-      .btn{display:inline-block;padding:10px 14px;border-radius:10px;text-decoration:none;background:#2563eb;color:white}
-      .danger{background:#dc2626}
-      h1{margin:0 0 10px}
-      p{opacity:.9}
-    </style>
-  </head>
-  <body>
-    <div class="card">
-      ${body}
-    </div>
-  </body>
-  </html>
-  `;
+async function saveToSupabase(rows, source) {
+  const shipmentRecords = buildShipmentRecords(rows, source);
+  const trackingRecords = buildTrackingRecords(rows);
+
+  const { error: shipmentError } = await supabase
+    .from("shipments")
+    .insert(shipmentRecords);
+
+  if (shipmentError) {
+    throw new Error(`Supabase shipment save failed: ${shipmentError.message}`);
+  }
+
+  const { error: trackingError } = await supabase
+    .from("tracking")
+    .insert(trackingRecords);
+
+  if (trackingError) {
+    throw new Error(`Supabase tracking save failed: ${trackingError.message}`);
+  }
 }
 
 async function renderStickerHtml(rows) {
@@ -184,6 +208,358 @@ async function renderStickerHtml(rows) {
 
   template = template.replace("{{STICKERS}}", stickersHtml);
   return template;
+}
+
+async function generateStickerPdf(rows, prefix) {
+  const stickerHtml = await renderStickerHtml(rows);
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const pdfFilename = `${prefix}_${timestamp}.pdf`;
+  const pdfPath = path.join(OUTPUT_DIR, pdfFilename);
+
+  const browser = await puppeteer.launch({
+    headless: true,
+    args: ["--no-sandbox", "--disable-setuid-sandbox"]
+  });
+
+  try {
+    const page = await browser.newPage();
+    await page.setContent(stickerHtml, { waitUntil: "networkidle0" });
+    await page.pdf({
+      path: pdfPath,
+      printBackground: true,
+      width: "210mm",
+      height: "298.4mm",
+      margin: {
+        top: "0mm",
+        right: "0mm",
+        bottom: "0mm",
+        left: "0mm"
+      }
+    });
+  } finally {
+    await browser.close();
+  }
+
+  return { pdfFilename, pdfPath, stickerHtml };
+}
+
+function renderSuccessPage({ title, downloadUrl, manifestUrl }) {
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>${esc(title)}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body{
+        margin:0;
+        font-family:Arial, Helvetica, sans-serif;
+        background:#f4f4f4;
+        color:#111;
+        text-align:center;
+      }
+      .wrap{
+        max-width:900px;
+        margin:0 auto;
+        padding:80px 20px;
+      }
+      h1{
+        font-size:54px;
+        margin-bottom:25px;
+      }
+      .bar-wrap{
+        max-width:1020px;
+        margin:40px auto 0;
+        background:#d9d9d9;
+        border-radius:18px;
+        height:36px;
+        overflow:hidden;
+      }
+      .bar{
+        width:100%;
+        height:100%;
+        background:#3c94d1;
+      }
+      .percent{
+        font-size:34px;
+        margin-top:55px;
+      }
+      .tick{
+        font-size:110px;
+        color:green;
+        line-height:1;
+        margin-top:35px;
+      }
+      .success{
+        font-size:42px;
+        font-weight:bold;
+        margin-top:18px;
+      }
+      .sub{
+        font-size:26px;
+        margin-top:25px;
+      }
+      .links{
+        margin-top:35px;
+      }
+      .btn{
+        display:inline-block;
+        margin:8px;
+        padding:12px 18px;
+        border-radius:10px;
+        background:#2563eb;
+        color:white;
+        text-decoration:none;
+        font-size:18px;
+      }
+      iframe{display:none;}
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Generating Stickers...</h1>
+
+      <div class="bar-wrap">
+        <div class="bar"></div>
+      </div>
+
+      <div class="percent">100%</div>
+      <div class="tick">✓</div>
+      <div class="success">Stickers Generated Successfully</div>
+      <div class="sub">Opening manifest...</div>
+
+      <div class="links">
+        <a class="btn" href="${esc(downloadUrl)}" download>Download PDF</a>
+        <a class="btn" href="${esc(manifestUrl)}">Open Manifest</a>
+      </div>
+    </div>
+
+    <iframe id="downloadFrame"></iframe>
+
+    <script>
+      window.onload = function () {
+        document.getElementById("downloadFrame").src = ${JSON.stringify(downloadUrl)};
+        setTimeout(function () {
+          window.location.href = ${JSON.stringify(manifestUrl)};
+        }, 1800);
+      };
+    </script>
+  </body>
+  </html>
+  `;
+}
+
+function renderManifestPage(rows) {
+  const today = new Date().toLocaleDateString("en-ZA");
+  const manifestNumber = "MN-" + Date.now();
+
+  const rowHtml = rows.map(r => `
+    <tr>
+      <td>${esc(r.barcode)}</td>
+      <td>${esc(r.Branch_Code)}</td>
+      <td>${esc(r.branch)}</td>
+      <td>${esc(r.parcels)}</td>
+      <td>Economy</td>
+    </tr>
+  `).join("");
+
+  return `
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>Collection Manifest</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+      body{
+        margin:0;
+        padding:0;
+        font-family:Arial, Helvetica, sans-serif;
+        background:linear-gradient(90deg,#07153f,#05122e);
+        color:white;
+      }
+      .page{
+        padding:28px 34px 40px;
+      }
+      .topbar{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:44px;
+      }
+      .btn{
+        display:inline-block;
+        padding:16px 28px;
+        border-radius:28px;
+        text-decoration:none;
+        color:white;
+        font-size:20px;
+      }
+      .btn-back{background:#7c8597;}
+      .btn-toggle{background:#3b82f6;}
+      .header{
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
+        margin-top:10px;
+        margin-bottom:10px;
+      }
+      .brand{
+        font-size:38px;
+        font-weight:700;
+      }
+      .manifest-no{
+        font-size:24px;
+        font-weight:700;
+      }
+      .title{
+        text-align:center;
+        font-size:42px;
+        font-weight:800;
+        margin:8px 0 18px;
+      }
+      .info-grid{
+        display:grid;
+        grid-template-columns: 1.6fr 1fr;
+        border:1px solid #111827;
+        margin-bottom:32px;
+      }
+      .info-cell{
+        border:1px solid #111827;
+        background:#1d2b47;
+        padding:0;
+      }
+      .label{
+        font-size:18px;
+        font-weight:700;
+        padding:8px 10px 4px;
+      }
+      .value{
+        background:#ffffff;
+        color:#111;
+        margin:0 10px 10px;
+        padding:12px 14px;
+        border-radius:8px;
+        font-size:18px;
+      }
+      .value-dark{
+        background:transparent;
+        color:white;
+        margin:4px 10px 10px;
+        padding:0;
+        font-size:18px;
+      }
+      h3{
+        margin:18px 0 14px;
+        font-size:22px;
+        font-weight:800;
+      }
+      table{
+        width:100%;
+        border-collapse:collapse;
+        margin-bottom:22px;
+      }
+      th{
+        background:#3b82f6;
+        color:white;
+        border:1px solid #111827;
+        padding:14px 10px;
+        font-size:18px;
+      }
+      td{
+        background:#1d2b47;
+        color:white;
+        border:1px solid #111827;
+        padding:14px 10px;
+        font-size:17px;
+        text-align:center;
+      }
+      .terms{
+        background:white;
+        color:black;
+        padding:14px;
+        border:2px solid #111;
+        font-size:13px;
+        line-height:1.5;
+      }
+      @media print{
+        .topbar{display:none;}
+        body{background:white;color:black;}
+        .page{padding:20px;}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="topbar">
+        <a href="/dashboard" class="btn btn-back">← Dashboard</a>
+        <div></div>
+        <div class="btn btn-toggle">🌓 Toggle</div>
+      </div>
+
+      <div class="header">
+        <div class="brand">QAS-TPCS</div>
+        <div class="manifest-no">Manifest No: ${esc(manifestNumber)}</div>
+      </div>
+
+      <div class="title">COLLECTION MANIFEST</div>
+
+      <div class="info-grid">
+        <div class="info-cell">
+          <div class="label">Collection Date: ${esc(today)}</div>
+          <div class="label">Collection Address:</div>
+          <div class="value">19 London Circle, Bracken Gate 1 Business Park, Brackenfell</div>
+        </div>
+        <div class="info-cell">
+          <div class="label">Total Shipments: ${esc(rows.length)}</div>
+          <div class="label" style="margin-top:28px;">Created By: <span class="value-dark">QAS-TPCS System</span></div>
+        </div>
+      </div>
+
+      <h3>SHIPMENT DETAILS</h3>
+
+      <table>
+        <tr>
+          <th>Barcode Number</th>
+          <th>Branch Code</th>
+          <th>Branch Name</th>
+          <th>Number of Parcels</th>
+          <th>Service</th>
+        </tr>
+        ${rowHtml}
+      </table>
+
+      <div class="terms">
+        <b>TERMS AND CONDITIONS</b><br><br>
+        I, the undersigned, hereby acknowledge receipt of this sealed package and confirm that it shows no visible signs of tampering at the time of collection. I accept full responsibility for the safekeeping and proper use of the package in accordance with all applicable terms and conditions.<br><br>
+        I further agree that IDEMIA shall not be held liable for any loss, damage, or interception of personal documents contained within the package, nor for any consequences arising therefrom. By signing, I indemnify and hold IDEMIA harmless against any such loss, damage, or consequence.
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+}
+
+async function handleStickerGeneration(res, rows, source, prefix) {
+  const invalidRows = validateStickerRows(rows);
+  if (invalidRows.length > 0) {
+    return res.status(400).send("Some rows have missing required values.");
+  }
+
+  await saveToSupabase(rows, source);
+
+  const manifestRows = buildManifestRows(rows);
+  saveCurrentManifest(manifestRows);
+
+  const { pdfFilename } = await generateStickerPdf(rows, prefix);
+
+  return res.send(
+    renderSuccessPage({
+      title: "Generating Stickers",
+      downloadUrl: `/download/${pdfFilename}`,
+      manifestUrl: "/jobs"
+    })
+  );
 }
 
 /* ===== HOME ===== */
@@ -318,56 +694,15 @@ app.get("/chat-tracking", requireLogin, (req, res) => {
   res.sendFile(path.join(__dirname, "../frontend/chat-tracking.html"));
 });
 
-/* ===== JOBS ===== */
-app.get("/jobs", requireLogin, async (req, res) => {
+/* ===== JOBS / CURRENT MANIFEST ===== */
+app.get("/jobs", requireLogin, (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from("shipments")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Jobs fetch error:", error);
-      return res.status(500).send("Error loading jobs");
+    if (!fs.existsSync(CURRENT_MANIFEST_PATH)) {
+      return res.send("No manifest yet. Generate stickers first.");
     }
 
-    const rows = (data || [])
-      .map(
-        item => `
-        <tr>
-          <td>${esc(item.reference_number)}</td>
-          <td>${esc(item.order_creation_date)}</td>
-          <td>${esc(item.branch_code)}</td>
-          <td>${esc(item.branch_name)}</td>
-          <td>${esc(item.source)}</td>
-          <td>${esc(item.created_at ? new Date(item.created_at).toLocaleString("en-ZA") : "")}</td>
-        </tr>
-      `
-      )
-      .join("");
-
-    res.send(
-      htmlPage(
-        "Jobs",
-        `
-        <div class="top">
-          <h1>Jobs</h1>
-          <a class="btn" href="/dashboard">Back to Dashboard</a>
-        </div>
-        <table>
-          <tr>
-            <th>Reference Number</th>
-            <th>Order Date</th>
-            <th>Branch Code</th>
-            <th>Branch Name</th>
-            <th>Source</th>
-            <th>Created At</th>
-          </tr>
-          ${rows}
-        </table>
-      `
-      )
-    );
+    const manifestRows = JSON.parse(fs.readFileSync(CURRENT_MANIFEST_PATH, "utf8"));
+    res.send(renderManifestPage(manifestRows));
   } catch (err) {
     console.error("Jobs route error:", err);
     res.status(500).send("Server error loading jobs");
@@ -375,54 +710,14 @@ app.get("/jobs", requireLogin, async (req, res) => {
 });
 
 /* ===== MANIFEST ===== */
-app.get("/manifest", requireLogin, async (req, res) => {
+app.get("/manifest", requireLogin, (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from("shipments")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-      console.error("Manifest fetch error:", error);
-      return res.status(500).send("Error loading manifest");
+    if (!fs.existsSync(CURRENT_MANIFEST_PATH)) {
+      return res.send("No manifest yet. Generate stickers first.");
     }
 
-    const rows = (data || [])
-      .map(
-        item => `
-        <tr>
-          <td>${esc(item.reference_number)}</td>
-          <td>${esc(item.branch_code)}</td>
-          <td>${esc(item.branch_name)}</td>
-          <td>${esc(item.barcode)}</td>
-          <td>Economy</td>
-        </tr>
-      `
-      )
-      .join("");
-
-    res.send(
-      htmlPage(
-        "Manifest",
-        `
-        <div class="top">
-          <h1>Collection Manifest</h1>
-          <a class="btn" href="/dashboard">Back to Dashboard</a>
-        </div>
-        <p>Total Shipments: ${esc((data || []).length)}</p>
-        <table>
-          <tr>
-            <th>Reference Number</th>
-            <th>Branch Code</th>
-            <th>Branch Name</th>
-            <th>Barcode</th>
-            <th>Service</th>
-          </tr>
-          ${rows}
-        </table>
-      `
-      )
-    );
+    const manifestRows = JSON.parse(fs.readFileSync(CURRENT_MANIFEST_PATH, "utf8"));
+    res.send(renderManifestPage(manifestRows));
   } catch (err) {
     console.error("Manifest route error:", err);
     res.status(500).send("Server error loading manifest");
@@ -485,11 +780,20 @@ app.post("/manifest-sign", requireLogin, async (req, res) => {
   }
 });
 
-/* ===== DOWNLOAD PLACEHOLDER ===== */
+/* ===== DOWNLOAD PDF ===== */
 app.get("/download/:filename", requireLogin, (req, res) => {
-  res
-    .status(501)
-    .send("File download is not restored yet on this cloud version.");
+  try {
+    const filePath = path.join(OUTPUT_DIR, req.params.filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send("File not found.");
+    }
+
+    res.download(filePath);
+  } catch (err) {
+    console.error("Download route error:", err);
+    res.status(500).send("Server error downloading file");
+  }
 });
 
 /* ===== POD HISTORY ===== */
@@ -527,27 +831,43 @@ app.get("/pod-history", requireLogin, async (req, res) => {
       )
       .join("");
 
-    res.send(
-      htmlPage(
-        "POD History",
-        `
-        <div class="top">
-          <h1>POD History</h1>
-          <a class="btn" href="/dashboard">Back to Dashboard</a>
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>POD History</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+          body{font-family:Arial;background:#0f172a;color:white;margin:0;padding:20px}
+          .card{max-width:1100px;margin:auto;background:rgba(255,255,255,0.08);padding:20px;border-radius:14px}
+          .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+          .btn{display:inline-block;padding:10px 14px;border-radius:10px;text-decoration:none;background:#2563eb;color:white}
+          .danger{background:#dc2626}
+          table{width:100%;border-collapse:collapse;background:white;color:#111}
+          th,td{padding:12px;border:1px solid #ddd}
+          th{background:#2563eb;color:white}
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <div class="top">
+            <h1>POD History</h1>
+            <a class="btn" href="/dashboard">Back to Dashboard</a>
+          </div>
+          <table>
+            <tr>
+              <th>POD Number</th>
+              <th>Driver Name</th>
+              <th>Dispatch Name</th>
+              <th>Created At</th>
+              <th>Action</th>
+            </tr>
+            ${rows}
+          </table>
         </div>
-        <table>
-          <tr>
-            <th>POD Number</th>
-            <th>Driver Name</th>
-            <th>Dispatch Name</th>
-            <th>Created At</th>
-            <th>Action</th>
-          </tr>
-          ${rows}
-        </table>
-      `
-      )
-    );
+      </body>
+      </html>
+    `);
   } catch (err) {
     console.error("POD history route error:", err);
     res.status(500).send("Server error loading POD history");
@@ -556,7 +876,7 @@ app.get("/pod-history", requireLogin, async (req, res) => {
 
 /* ===== POD DELETE ALL ===== */
 app.get("/pod-delete", requireLogin, (req, res) => {
-  res.status(501).send("Delete all PODs is not enabled in this cloud version.");
+  res.status(501).send("Delete all PODs is not enabled.");
 });
 
 /* ===== POD DELETE ONE ===== */
@@ -585,7 +905,7 @@ app.get("/pod-delete/:podNo", requireLogin, async (req, res) => {
   }
 });
 
-/* ===== BATCH UPLOAD + STICKER PREVIEW ===== */
+/* ===== BATCH: SAVE + PDF + AUTO DOWNLOAD + MANIFEST ===== */
 app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
@@ -595,9 +915,9 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    const rows = xlsx.utils.sheet_to_json(sheet);
+    const rawRows = xlsx.utils.sheet_to_json(sheet);
 
-    if (!rows.length) {
+    if (!rawRows.length) {
       return res.status(400).send("Excel file contains no data.");
     }
 
@@ -609,7 +929,7 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
     ];
 
     const missingColumns = requiredColumns.filter(
-      col => !rows[0]?.hasOwnProperty(col)
+      col => !rawRows[0]?.hasOwnProperty(col)
     );
 
     if (missingColumns.length > 0) {
@@ -618,41 +938,21 @@ app.post("/batch", requireLogin, upload.single("file"), async (req, res) => {
       );
     }
 
-    const invalidRows = validateStickerRows(rows);
-    if (invalidRows.length > 0) {
-      return res.status(400).send("Some rows have missing required values.");
-    }
+    const rows = rawRows.map(row => ({
+      Order_No: String(row.Order_No || "").trim(),
+      Order_Creation_Date: String(row.Order_Creation_Date || "").trim(),
+      Branch_Code: String(row.Branch_Code || "").trim(),
+      Branch_Name: String(row.Branch_Name || "").trim()
+    }));
 
-    const shipmentRecords = buildShipmentRecords(rows, "batch");
-    const trackingRecords = buildTrackingRecords(rows);
-
-    const { error: shipmentError } = await supabase
-      .from("shipments")
-      .insert(shipmentRecords);
-
-    if (shipmentError) {
-      console.error("Supabase batch insert error:", shipmentError);
-      return res.status(500).send("Error saving batch shipment data");
-    }
-
-    const { error: trackingError } = await supabase
-      .from("tracking")
-      .insert(trackingRecords);
-
-    if (trackingError) {
-      console.error("Supabase batch tracking insert error:", trackingError);
-      return res.status(500).send("Error saving batch tracking data");
-    }
-
-    const stickerHtml = await renderStickerHtml(rows);
-    res.send(stickerHtml);
+    return await handleStickerGeneration(res, rows, "batch", "QAS-TPCS_Batch");
   } catch (err) {
     console.error("Batch route error:", err);
     res.status(500).send("Server error in batch upload");
   }
 });
 
-/* ===== MANUAL SAVE + STICKER PREVIEW ===== */
+/* ===== MANUAL: SAVE + PDF + AUTO DOWNLOAD + MANIFEST ===== */
 app.post("/manual", requireLogin, async (req, res) => {
   try {
     const rows = buildManualRows(req.body);
@@ -661,34 +961,7 @@ app.post("/manual", requireLogin, async (req, res) => {
       return res.status(400).send("No manual rows received.");
     }
 
-    const invalidRows = validateStickerRows(rows);
-    if (invalidRows.length > 0) {
-      return res.status(400).send("Some manual rows have missing required values.");
-    }
-
-    const shipmentRecords = buildShipmentRecords(rows, "manual");
-    const trackingRecords = buildTrackingRecords(rows);
-
-    const { error: shipmentError } = await supabase
-      .from("shipments")
-      .insert(shipmentRecords);
-
-    if (shipmentError) {
-      console.error("Supabase insert error:", shipmentError);
-      return res.status(500).send("Error saving manual sticker data");
-    }
-
-    const { error: trackingError } = await supabase
-      .from("tracking")
-      .insert(trackingRecords);
-
-    if (trackingError) {
-      console.error("Supabase tracking insert error:", trackingError);
-      return res.status(500).send("Error saving tracking data");
-    }
-
-    const stickerHtml = await renderStickerHtml(rows);
-    res.send(stickerHtml);
+    return await handleStickerGeneration(res, rows, "manual", "QAS-TPCS_Manual");
   } catch (err) {
     console.error("Manual route error:", err);
     res.status(500).send("Server error in manual generation");
